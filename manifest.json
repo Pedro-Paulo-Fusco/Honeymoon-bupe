@@ -1,0 +1,17 @@
+{
+  "name": "Roma 2026 · Checklist da viagem",
+  "short_name": "Roma 2026",
+  "description": "Checklist da lua de mel em Roma, sincronizado entre os dois celulares.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FBF8F1",
+  "theme_color": "#0E3A63",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "rules": {
+    "trips": {
+      "$code": {
+        ".read":  "auth != null",
+        ".write": "auth != null",
+        ".validate": "$code.length >= 6 && $code.length <= 40",
+        "items": {
+          "$id": {
+            ".validate": "newData.hasChildren(['v','t'])",
+            "v": { ".validate": "newData.isBoolean()" },
+            "t": { ".validate": "newData.isNumber()" },
+            "w": { ".validate": "newData.isString() && newData.val().length <= 20" },
+            "$outro": { ".validate": false }
+          }
+        },
+        "present": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid"
+          }
+        }
+      }
+    }
+  }
+}

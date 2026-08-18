@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0E3A63">
+<meta name="description" content="Checklist da viagem a Roma, sincronizado entre os dois celulares.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Roma 2026">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Roma 2026 · Checklist</title>
+
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icons/favicon.png">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="stub">
+    <p class="eyebrow">Lua de mel · Itália</p>
+    <h1 id="destino">Roma<br><em>2026</em></h1>
+    <p class="route" id="route"></p>
+    <div class="count"><b id="dias">—</b><span id="dias-lbl">carregando</span></div>
+    <div class="bar"><i id="fill"></i></div>
+    <div class="bar-lbl"><span id="prog">0 de 0 itens</span><span id="pct">0%</span></div>
+  </header>
+
+  <div class="aviso" id="aviso" hidden>
+    <b>Falta configurar o Firebase</b>
+    Abra o arquivo <code>firebase-config.js</code> e cole a configuração do seu projeto.
+    Enquanto isso o checklist funciona, mas guarda o progresso só neste aparelho.
+  </div>
+
+  <section class="sync">
+    <div class="sync-top">
+      <span class="dot" id="dot"></span>
+      <p id="sync-msg">Carregando…</p>
+      <button class="lnk" id="toggle-setup">Conectar</button>
+    </div>
+    <p class="who" id="who"></p>
+    <div class="setup" id="setup">
+      <label for="name">Quem está usando este aparelho</label>
+      <input id="name" type="text" placeholder="Pedro" autocomplete="off" maxlength="14">
+      <label for="code">Código do casal</label>
+      <input id="code" type="text" placeholder="roma-a3f9k" autocomplete="off"
+             maxlength="24" autocapitalize="none" spellcheck="false" inputmode="text">
+      <div class="btns">
+        <button class="btn" id="connect">Conectar</button>
+        <button class="btn ghost" id="disconnect">Desconectar</button>
+      </div>
+      <p class="hint">Abram o mesmo endereço nos dois celulares e digitem o <b>mesmo código</b>.
+        A partir daí, o que um marcar aparece no outro na hora. Use um código difícil de adivinhar —
+        quem souber o código enxerga a lista.</p>
+    </div>
+  </section>
+
+  <main id="lista"></main>
+
+  <section class="facts">
+    <h3>Números que não podem falhar</h3>
+    <div id="facts-list"></div>
+  </section>
+
+  <footer>
+    <button id="install">Instalar na tela inicial</button>
+    <button class="reset" id="reset">Limpar tudo e recomeçar</button>
+    <p class="saved" id="saved"></p>
+  </footer>
+</div>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>
