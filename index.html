@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0E3A63">
-<meta name="description" content="Checklist da viagem a Roma, sincronizado entre os dois celulares.">
+<meta name="description" content="Checklist, roteiro, hospedagens e documentos da viagem a Roma.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Roma 2026">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Roma 2026 · Checklist</title>
+<title>Roma 2026 · Viagem</title>
 
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" href="./icons/favicon.png">
@@ -32,8 +32,8 @@
 
   <div class="aviso" id="aviso" hidden>
     <b>Falta configurar o Firebase</b>
-    Abra o arquivo <code>firebase-config.js</code> e cole a configuração do seu projeto.
-    Enquanto isso o checklist funciona, mas guarda o progresso só neste aparelho.
+    Abra <code>firebase-config.js</code> e cole a configuração do projeto.
+    O app funciona, mas guarda tudo só neste aparelho.
   </div>
 
   <section class="sync">
@@ -47,19 +47,37 @@
       <label for="name">Quem está usando este aparelho</label>
       <input id="name" type="text" placeholder="Pedro" autocomplete="off" maxlength="14">
       <label for="code">Código do casal</label>
-      <input id="code" type="text" placeholder="roma-a3f9k" autocomplete="off"
-             maxlength="24" autocapitalize="none" spellcheck="false" inputmode="text">
+      <input id="code" type="text" placeholder="roma-a3f9k2" autocomplete="off"
+             maxlength="24" autocapitalize="none" spellcheck="false">
       <div class="btns">
         <button class="btn" id="connect">Conectar</button>
         <button class="btn ghost" id="disconnect">Desconectar</button>
       </div>
-      <p class="hint">Abram o mesmo endereço nos dois celulares e digitem o <b>mesmo código</b>.
-        A partir daí, o que um marcar aparece no outro na hora. Use um código difícil de adivinhar —
-        quem souber o código enxerga a lista.</p>
+      <p class="hint">Abram o mesmo endereço nos dois celulares e usem o <b>mesmo código</b>.
+        Quem souber o código enxerga checklist, roteiro, estadias e os documentos marcados como sincronizados.</p>
     </div>
   </section>
 
-  <main id="lista"></main>
+  <nav class="tabs" role="tablist">
+    <button class="tab ativa" data-aba="checklist" role="tab" aria-selected="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>
+      <span>Checklist</span><i class="badge"></i>
+    </button>
+    <button class="tab" data-aba="roteiro" role="tab" aria-selected="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4M16 2v4M3 10h18"/><rect x="3" y="4" width="18" height="18" rx="2"/></svg>
+      <span>Roteiro</span><i class="badge"></i>
+    </button>
+    <button class="tab" data-aba="estadias" role="tab" aria-selected="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21V8l9-5 9 5v13"/><path d="M9 21v-6h6v6"/></svg>
+      <span>Estadias</span><i class="badge"></i>
+    </button>
+    <button class="tab" data-aba="docs" role="tab" aria-selected="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 14h6M9 18h4"/></svg>
+      <span>Documentos</span><i class="badge"></i>
+    </button>
+  </nav>
+
+  <main id="view"></main>
 
   <section class="facts">
     <h3>Números que não podem falhar</h3>
@@ -68,8 +86,10 @@
 
   <footer>
     <button id="install">Instalar na tela inicial</button>
-    <button class="reset" id="reset">Limpar tudo e recomeçar</button>
-    <p class="saved" id="saved"></p>
+    <div class="rodape-btns">
+      <button class="reset" id="backup">Baixar backup</button>
+      <button class="reset" id="reset">Zerar checklist</button>
+    </div>
   </footer>
 </div>
 

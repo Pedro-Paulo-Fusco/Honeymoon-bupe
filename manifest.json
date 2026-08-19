@@ -1,7 +1,7 @@
 {
-  "name": "Roma 2026 · Checklist da viagem",
+  "name": "Roma 2026 · Viagem",
   "short_name": "Roma 2026",
-  "description": "Checklist da lua de mel em Roma, sincronizado entre os dois celulares.",
+  "description": "Checklist, roteiro, hospedagens e documentos da viagem a Roma.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
