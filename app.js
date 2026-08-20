@@ -14,6 +14,34 @@ const ABAS = {
 };
 let abaAtual = store.LS.get("roma2026:aba") || "checklist";
 
+/* ═══════ tema claro / escuro ═══════ */
+const CORES = { claro:"#B23A1C", escuro:"#1C0F09" };
+
+function aplicarTema(t){
+  document.documentElement.dataset.tema = t;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if(meta) meta.setAttribute("content", CORES[t] || CORES.claro);
+  const b = $("#tema");
+  if(b) b.setAttribute("aria-label", t === "escuro" ? "Mudar para o modo claro" : "Mudar para o modo escuro");
+}
+
+function iniciarTema(){
+  const salvo = store.LS.get("bupe:tema");
+  const doSistema = window.matchMedia("(prefers-color-scheme: dark)").matches ? "escuro" : "claro";
+  aplicarTema(salvo || doSistema);
+
+  /* sem escolha manual, acompanha o sistema */
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", ev => {
+    if(!store.LS.get("bupe:tema")) aplicarTema(ev.matches ? "escuro" : "claro");
+  });
+
+  $("#tema").onclick = () => {
+    const novo = document.documentElement.dataset.tema === "escuro" ? "claro" : "escuro";
+    store.LS.set("bupe:tema", novo);
+    aplicarTema(novo);
+  };
+}
+
 /* ═══════ cabeçalho ═══════ */
 function contagem(){
   const [Y,M,D] = VIAGEM.embarque.split("-").map(Number);
@@ -155,6 +183,7 @@ function backup(){
   if("serviceWorker" in navigator){
     navigator.serviceWorker.register("./sw.js").catch(e => console.warn("SW:", e));
   }
+  iniciarTema();
   cabecalho();
 
   document.querySelectorAll(".tab").forEach(b => {

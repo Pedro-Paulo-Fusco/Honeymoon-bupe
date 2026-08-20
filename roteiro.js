@@ -1,4 +1,4 @@
-import { dados, gravar, cfg } from "../store.js";
+import { dados, gravar, cfg, LS } from "../store.js";
 import { esc, nl, uid, agora, modal, campo, confirmar, toast, dataBR, diaSemana } from "../util.js";
 
 /* roteiro/{id} = { dia:"2026-10-02", cidade, titulo, nota, t, paradas:{pid:{h,n,d}} } */
@@ -11,6 +11,18 @@ const paradasDe = d => Object.entries(d.paradas || {})
   .map(([id, p]) => ({ id, ...p }))
   .sort((a,b) => (a.h||"99:99").localeCompare(b.h||"99:99"));
 
+/* ── estado da tela (fica só neste aparelho) ── */
+let filtro  = LS.get("bupe:filtroCidade") || null;      // null = todas
+let abertos = LS.get("bupe:diasAbertos")  || {};        // { idDoDia: true }
+
+const estaAberto = id => !!abertos[id];
+function alternarDia(id, el){
+  if(abertos[id]) delete abertos[id]; else abertos[id] = true;
+  LS.set("bupe:diasAbertos", abertos);
+  render(el);
+}
+
+/* ═══════ formulários ═══════ */
 function formDia(d){
   return `
     ${campo("d-dia", "Data", "date", d?.dia || "")}
@@ -21,13 +33,16 @@ function formDia(d){
     ${campo("d-nota", "Observações do dia (opcional)", "textarea", d?.nota || "", 'maxlength="600"')}`;
 }
 
-function novoDia(){
+function novoDia(el){
   modal({
     titulo: "Novo dia de roteiro", corpo: formDia(null), salvar: "Adicionar",
     onSalvar: async back => {
       const dia = back.querySelector("#d-dia").value;
       if(!dia){ toast("Escolha a data do dia."); return false; }
-      await gravar("roteiro", "r" + uid(), {
+      const id = "r" + uid();
+      abertos[id] = true;                 // já nasce aberto para você preencher
+      LS.set("bupe:diasAbertos", abertos);
+      await gravar("roteiro", id, {
         dia,
         cidade: back.querySelector("#d-cidade").value.trim(),
         titulo: back.querySelector("#d-titulo").value.trim(),
@@ -105,9 +120,7 @@ function editarParada(diaId, p){
   });
 }
 
-/* ── filtro por cidade ── */
-let filtro = null;   // null = todas
-
+/* ═══════ filtro por cidade ═══════ */
 function cidades(){
   const cont = {};
   Object.values(dados.roteiro).forEach(d => {
@@ -117,31 +130,50 @@ function cidades(){
   return Object.entries(cont).sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 }
 
-function barraFiltros(el, total){
+function barraTopo(el, total){
   const cs = cidades();
-  if(cs.length < 2) return;              // filtro só faz sentido com 2+ cidades
-  if(filtro && !cs.some(([c]) => c === filtro)) filtro = null;
+  if(!total) return;
+  if(filtro && !cs.some(([c]) => c === filtro)){ filtro = null; LS.set("bupe:filtroCidade", null); }
 
   const nav = document.createElement("div");
   nav.className = "filtros";
-  const bt = (rot, n, ativo, valor) => {
+
+  const chip = (rot, n, ativo, valor) => {
     const b = document.createElement("button");
     b.className = "chip" + (ativo ? " ativo" : "");
-    b.innerHTML = `${esc(rot)}<span class="n">${n}</span>`;
-    b.onclick = () => { filtro = valor; render(el); };
+    b.innerHTML = `${esc(rot)}${n != null ? `<span class="n">${n}</span>` : ""}`;
+    b.onclick = () => { filtro = valor; LS.set("bupe:filtroCidade", valor); render(el); };
     return b;
   };
-  nav.appendChild(bt("Todas", total, filtro === null, null));
-  cs.forEach(([c, n]) => nav.appendChild(bt(c, n, filtro === c, c)));
+
+  if(cs.length){
+    nav.appendChild(chip("Todas", total, filtro === null, null));
+    cs.forEach(([c, n]) => nav.appendChild(chip(c, n, filtro === c, c)));
+  }
+
+  /* abrir / recolher todos */
+  const visiveis = ordenados().filter(d => !filtro || (d.cidade||"").trim() === filtro);
+  const algumAberto = visiveis.some(d => estaAberto(d.id));
+  const tudo = document.createElement("button");
+  tudo.className = "chip acao-chip";
+  tudo.textContent = algumAberto ? "Recolher tudo" : "Abrir tudo";
+  tudo.onclick = () => {
+    visiveis.forEach(d => { if(algumAberto) delete abertos[d.id]; else abertos[d.id] = true; });
+    LS.set("bupe:diasAbertos", abertos);
+    render(el);
+  };
+  nav.appendChild(tudo);
+
   el.appendChild(nav);
 }
 
+/* ═══════ render ═══════ */
 export function render(el){
   const todos = ordenados();
-  const dias = filtro ? todos.filter(d => (d.cidade || "").trim() === filtro) : todos;
+  const dias  = filtro ? todos.filter(d => (d.cidade || "").trim() === filtro) : todos;
   el.innerHTML = "";
 
-  barraFiltros(el, todos.length);
+  barraTopo(el, todos.length);
 
   if(!todos.length){
     el.insertAdjacentHTML("beforeend", `<div class="vazio">
@@ -157,7 +189,7 @@ export function render(el){
 
   let cidadeAtual = null;
   dias.forEach(d => {
-    if(d.cidade && d.cidade !== cidadeAtual){
+    if(!filtro && d.cidade && d.cidade !== cidadeAtual){
       cidadeAtual = d.cidade;
       const h = document.createElement("p");
       h.className = "cidade-sep";
@@ -166,28 +198,41 @@ export function render(el){
     }
 
     const paradas = paradasDe(d);
+    const aberto  = estaAberto(d.id);
     const card = document.createElement("section");
-    card.className = "card dia";
+    card.className = "card dia" + (aberto ? " aberto" : "");
     card.innerHTML = `
       <div class="dia-head">
         <div class="dia-data"><b>${esc(dataBR(d.dia))}</b><span>${esc(diaSemana(d.dia))}</span></div>
         <div class="dia-tit">
           <h2>${esc(d.titulo || d.cidade || "Sem título")}</h2>
-          ${d.nota ? `<p class="dia-nota">${nl(d.nota)}</p>` : ""}
+          <span class="when">${paradas.length
+            ? `${paradas.length} parada${paradas.length>1?"s":""}${paradas[0].h ? " · a partir das "+esc(paradas[0].h) : ""}`
+            : "sem paradas ainda"}</span>
         </div>
+        <span class="chev"></span>
         <button class="mini" aria-label="Editar dia">✎</button>
       </div>
-      <div class="paradas">
-        ${paradas.length ? paradas.map(p => `
-          <div class="parada" data-p="${p.id}">
-            <span class="hora">${esc(p.h || "—")}</span>
-            <span class="parada-txt"><b>${esc(p.n)}</b>${p.d ? `<small>${nl(p.d)}</small>` : ""}</span>
-          </div>`).join("")
-        : `<p class="sem">Nenhuma parada ainda.</p>`}
-      </div>
-      <button class="add-inline">+ adicionar parada</button>`;
+      <div class="dia-body">
+        ${d.nota ? `<p class="dia-nota">${nl(d.nota)}</p>` : ""}
+        <div class="paradas">
+          ${paradas.length ? paradas.map(p => `
+            <div class="parada" data-p="${p.id}">
+              <span class="hora">${esc(p.h || "—")}</span>
+              <span class="parada-txt"><b>${esc(p.n)}</b>${p.d ? `<small>${nl(p.d)}</small>` : ""}</span>
+            </div>`).join("")
+          : `<p class="sem">Nenhuma parada ainda.</p>`}
+        </div>
+        <button class="add-inline">+ adicionar parada</button>
+      </div>`;
 
-    card.querySelector(".dia-head .mini").onclick = () => editarDia(d);
+    /* clique no cabeçalho recolhe ou abre */
+    const head = card.querySelector(".dia-head");
+    head.onclick = e => {
+      if(e.target.closest(".mini")) return;
+      alternarDia(d.id, el);
+    };
+    card.querySelector(".dia-head .mini").onclick = e => { e.stopPropagation(); editarDia(d); };
     card.querySelector(".add-inline").onclick = () => novaParada(d.id);
     card.querySelectorAll(".parada").forEach(node => {
       const p = paradas.find(x => x.id === node.dataset.p);
@@ -199,6 +244,6 @@ export function render(el){
   const add = document.createElement("button");
   add.className = "add-grande";
   add.textContent = "+ novo dia de roteiro";
-  add.onclick = novoDia;
+  add.onclick = () => novoDia(el);
   el.appendChild(add);
 }
