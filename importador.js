@@ -159,13 +159,25 @@ function agrupar(linhas){
   const dias = {};
   linhas.forEach(l => {
     if(!l.data) return;
-    if(!dias[l.data]) dias[l.data] = { dia:l.data, cidade:"", titulo:"", paradas:[] };
+    if(!dias[l.data]) dias[l.data] = { dia:l.data, cidade:"", titulo:"", paradas:[], cont:{} };
     const d = dias[l.data];
-    if(!d.cidade && l.cidade) d.cidade = l.cidade;
+    if(l.cidade){ d.cont[l.cidade] = (d.cont[l.cidade] || 0) + 1; }
     if(!d.titulo && l.tituloDia) d.titulo = l.tituloDia;
-    if(l.nome) d.paradas.push({ h:l.hora, n:l.nome, d:l.detalhe });
+    if(l.nome) d.paradas.push({ h:l.hora, n:l.nome, d:l.detalhe, c:l.cidade || "" });
   });
-  return Object.values(dias).sort((a,b) => a.dia.localeCompare(b.dia));
+  const lista = Object.values(dias);
+  lista.forEach(d => {
+    const ord = Object.entries(d.cont).sort((a,b) => b[1] - a[1]);
+    d.cidade = ord.length ? ord[0][0] : "";          /* base do dia: a mais frequente */
+    /* trajeto: cidades na ordem em que aparecem no relógio */
+    const porHora = [...d.paradas].sort((a,b) => (a.c && b.c ? 0 : 0) ||
+      (a.h || "99:99").localeCompare(b.h || "99:99"));
+    d.cidades = [];
+    porHora.forEach(p => { if(p.c && !d.cidades.includes(p.c)) d.cidades.push(p.c); });
+    if(!d.cidades.length && d.cidade) d.cidades = [d.cidade];
+    delete d.cont;
+  });
+  return lista.sort((a,b) => a.dia.localeCompare(b.dia));
 }
 
 /* ═══════ gravação ═══════ */
@@ -178,7 +190,9 @@ async function aplicar(dias, modo){
     const antigo = existentes.find(x => x.dia === novo.dia);
     const id = antigo ? antigo.id : "r" + uid();
     const paradas = (modo === "somar" && antigo) ? { ...(antigo.paradas || {}) } : {};
-    novo.paradas.forEach(p => { paradas["p" + uid()] = { h:p.h || "", n:p.n, d:p.d || "" }; });
+    novo.paradas.forEach(p => {
+      paradas["p" + uid()] = { h:p.h || "", n:p.n, d:p.d || "", c:p.c || "" };
+    });
     lote[id] = {
       dia: novo.dia,
       cidade: novo.cidade || (antigo ? antigo.cidade || "" : ""),
@@ -217,7 +231,7 @@ function previa(dias, aoConcluir){
   const amostra = dias.slice(0, 6).map(d => `
     <div class="prev-dia">
       <b>${esc(dataBR(d.dia))} · ${esc(diaSemana(d.dia))}</b>
-      <span>${esc(d.cidade || "sem cidade")} · ${d.paradas.length} parada${d.paradas.length>1?"s":""}</span>
+      <span>${esc((d.cidades && d.cidades.length ? d.cidades.join(" → ") : d.cidade) || "sem cidade")} · ${d.paradas.length} parada${d.paradas.length>1?"s":""}</span>
       <small>${esc(d.paradas.slice(0,3).map(p => (p.h ? p.h+" " : "") + p.n).join(" · "))}${d.paradas.length>3?" …":""}</small>
     </div>`).join("");
 

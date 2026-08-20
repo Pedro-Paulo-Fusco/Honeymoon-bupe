@@ -354,3 +354,18 @@ html[data-tema="escuro"] .chip.acao-chip{color:var(--ambar)}
 html[data-tema="escuro"] .prev-dia b{color:var(--ambar)}
 .prev-dia span{display:block;font-size:12.5px;color:var(--grigio);margin-top:2px}
 .prev-dia small{display:block;font-size:12px;color:var(--grigio);opacity:.85;margin-top:4px;line-height:1.45}
+
+/* ══ trajeto e paradas por cidade ══ */
+.rota{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:5px}
+.rota .cid{font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:10px;
+  letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:5px;
+  background:var(--tag-opt-bg);color:var(--grigio)}
+.rota .cid.on{background:var(--ambar);color:#3A2408;font-weight:500}
+.rota b{color:var(--grigio);font-size:10px;font-weight:400;opacity:.7}
+.parada-cidade{margin:12px 0 2px;font-family:"IBM Plex Mono",monospace;font-size:10px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--brasa);
+  padding-top:9px;border-top:1px solid var(--linea)}
+html[data-tema="escuro"] .parada-cidade{color:var(--ambar)}
+.paradas .parada-cidade:first-child{border-top:0;padding-top:0;margin-top:4px}
+.parada-cidade + .parada{border-top:0}
+.filtrado{margin:6px 0 0;font-size:12px;color:var(--grigio);font-style:italic}

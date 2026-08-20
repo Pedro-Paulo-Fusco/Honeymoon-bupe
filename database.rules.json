@@ -2,95 +2,190 @@
   "rules": {
     "trips": {
       "$code": {
-        ".read":  "auth != null",
+        ".read": "auth != null",
         ".write": "auth != null",
         ".validate": "$code.length >= 6 && $code.length <= 40",
-
         "items": {
           "$id": {
-            "v": { ".validate": "newData.isBoolean()" },
-            "t": { ".validate": "newData.isNumber()" },
-            "w": { ".validate": "newData.isString() && newData.val().length <= 20" },
-            "$outro": { ".validate": false }
+            "v": {
+              ".validate": "newData.isBoolean()"
+            },
+            "t": {
+              ".validate": "newData.isNumber()"
+            },
+            "w": {
+              ".validate": "newData.isString() && newData.val().length <= 20"
+            },
+            "$outro": {
+              ".validate": false
+            }
           }
         },
-
         "extra": {
           "$id": {
-            "p":    { ".validate": "newData.isString() && newData.val().length <= 160" },
-            "s":    { ".validate": "newData.isString() && newData.val().length <= 600" },
-            "fase": { ".validate": "newData.isString() || newData.isNumber()" },
-            "t":    { ".validate": "newData.isNumber()" },
-            "w":    { ".validate": "newData.isString() && newData.val().length <= 20" },
-            "$outro": { ".validate": false }
+            "p": {
+              ".validate": "newData.isString() && newData.val().length <= 160"
+            },
+            "s": {
+              ".validate": "newData.isString() && newData.val().length <= 600"
+            },
+            "fase": {
+              ".validate": "newData.isString() || newData.isNumber()"
+            },
+            "t": {
+              ".validate": "newData.isNumber()"
+            },
+            "w": {
+              ".validate": "newData.isString() && newData.val().length <= 20"
+            },
+            "$outro": {
+              ".validate": false
+            }
           }
         },
-
         "roteiro": {
           "$id": {
-            "dia":    { ".validate": "newData.isString() && newData.val().length <= 12" },
-            "cidade": { ".validate": "newData.isString() && newData.val().length <= 50" },
-            "titulo": { ".validate": "newData.isString() && newData.val().length <= 80" },
-            "nota":   { ".validate": "newData.isString() && newData.val().length <= 800" },
-            "t":      { ".validate": "newData.isNumber()" },
-            "w":      { ".validate": "newData.isString() && newData.val().length <= 20" },
+            "dia": {
+              ".validate": "newData.isString() && newData.val().length <= 12"
+            },
+            "cidade": {
+              ".validate": "newData.isString() && newData.val().length <= 50"
+            },
+            "titulo": {
+              ".validate": "newData.isString() && newData.val().length <= 80"
+            },
+            "nota": {
+              ".validate": "newData.isString() && newData.val().length <= 800"
+            },
+            "t": {
+              ".validate": "newData.isNumber()"
+            },
+            "w": {
+              ".validate": "newData.isString() && newData.val().length <= 20"
+            },
             "paradas": {
               "$pid": {
-                "h": { ".validate": "newData.isString() && newData.val().length <= 8" },
-                "n": { ".validate": "newData.isString() && newData.val().length <= 100" },
-                "d": { ".validate": "newData.isString() && newData.val().length <= 500" },
-                "$outro": { ".validate": false }
+                "h": {
+                  ".validate": "newData.isString() && newData.val().length <= 8"
+                },
+                "n": {
+                  ".validate": "newData.isString() && newData.val().length <= 100"
+                },
+                "d": {
+                  ".validate": "newData.isString() && newData.val().length <= 500"
+                },
+                "$outro": {
+                  ".validate": false
+                },
+                "c": {
+                  ".validate": "newData.isString() && newData.val().length <= 50"
+                }
               }
             },
-            "$outro": { ".validate": false }
+            "$outro": {
+              ".validate": false
+            }
           }
         },
-
         "estadias": {
           "$id": {
-            "n":       { ".validate": "newData.isString() && newData.val().length <= 90" },
-            "cidade":  { ".validate": "newData.isString() && newData.val().length <= 50" },
-            "end":     { ".validate": "newData.isString() && newData.val().length <= 250" },
-            "entrada": { ".validate": "newData.isString() && newData.val().length <= 12" },
-            "saida":   { ".validate": "newData.isString() && newData.val().length <= 12" },
-            "ref":     { ".validate": "newData.isString() && newData.val().length <= 60" },
-            "tel":     { ".validate": "newData.isString() && newData.val().length <= 60" },
-            "nota":    { ".validate": "newData.isString() && newData.val().length <= 800" },
-            "t":       { ".validate": "newData.isNumber()" },
-            "w":       { ".validate": "newData.isString() && newData.val().length <= 20" },
+            "n": {
+              ".validate": "newData.isString() && newData.val().length <= 90"
+            },
+            "cidade": {
+              ".validate": "newData.isString() && newData.val().length <= 50"
+            },
+            "end": {
+              ".validate": "newData.isString() && newData.val().length <= 250"
+            },
+            "entrada": {
+              ".validate": "newData.isString() && newData.val().length <= 12"
+            },
+            "saida": {
+              ".validate": "newData.isString() && newData.val().length <= 12"
+            },
+            "ref": {
+              ".validate": "newData.isString() && newData.val().length <= 60"
+            },
+            "tel": {
+              ".validate": "newData.isString() && newData.val().length <= 60"
+            },
+            "nota": {
+              ".validate": "newData.isString() && newData.val().length <= 800"
+            },
+            "t": {
+              ".validate": "newData.isNumber()"
+            },
+            "w": {
+              ".validate": "newData.isString() && newData.val().length <= 20"
+            },
             "fotos": {
               "$fid": {
-                "d": { ".validate": "newData.isString() && newData.val().length <= 1500000" },
-                "t": { ".validate": "newData.isNumber()" },
-                "$outro": { ".validate": false }
+                "d": {
+                  ".validate": "newData.isString() && newData.val().length <= 1500000"
+                },
+                "t": {
+                  ".validate": "newData.isNumber()"
+                },
+                "$outro": {
+                  ".validate": false
+                }
               }
             },
-            "$outro": { ".validate": false }
+            "$outro": {
+              ".validate": false
+            }
           }
         },
-
         "docs": {
           "$id": {
-            "titulo":   { ".validate": "newData.isString() && newData.val().length <= 80" },
-            "tipo":     { ".validate": "newData.isString() && newData.val().length <= 40" },
-            "dono":     { ".validate": "newData.isString() && newData.val().length <= 40" },
-            "num":      { ".validate": "newData.isString() && newData.val().length <= 60" },
-            "validade": { ".validate": "newData.isString() && newData.val().length <= 12" },
-            "nota":     { ".validate": "newData.isString() && newData.val().length <= 600" },
-            "t":        { ".validate": "newData.isNumber()" },
-            "w":        { ".validate": "newData.isString() && newData.val().length <= 20" },
-            "arq": {
-              "d":    { ".validate": "newData.isString() && newData.val().length <= 1800000" },
-              "mime": { ".validate": "newData.isString() && newData.val().length <= 40" },
-              "nome": { ".validate": "newData.isString() && newData.val().length <= 120" },
-              "$outro": { ".validate": false }
+            "titulo": {
+              ".validate": "newData.isString() && newData.val().length <= 80"
             },
-            "$outro": { ".validate": false }
+            "tipo": {
+              ".validate": "newData.isString() && newData.val().length <= 40"
+            },
+            "dono": {
+              ".validate": "newData.isString() && newData.val().length <= 40"
+            },
+            "num": {
+              ".validate": "newData.isString() && newData.val().length <= 60"
+            },
+            "validade": {
+              ".validate": "newData.isString() && newData.val().length <= 12"
+            },
+            "nota": {
+              ".validate": "newData.isString() && newData.val().length <= 600"
+            },
+            "t": {
+              ".validate": "newData.isNumber()"
+            },
+            "w": {
+              ".validate": "newData.isString() && newData.val().length <= 20"
+            },
+            "arq": {
+              "d": {
+                ".validate": "newData.isString() && newData.val().length <= 1800000"
+              },
+              "mime": {
+                ".validate": "newData.isString() && newData.val().length <= 40"
+              },
+              "nome": {
+                ".validate": "newData.isString() && newData.val().length <= 120"
+              },
+              "$outro": {
+                ".validate": false
+              }
+            },
+            "$outro": {
+              ".validate": false
+            }
           }
         },
-
         "present": {
-          "$uid": { ".write": "auth != null && auth.uid === $uid" }
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid"
+          }
         }
       }
     }
