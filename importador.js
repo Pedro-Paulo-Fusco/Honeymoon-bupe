@@ -5,9 +5,9 @@ import { dados, gravarLote, cfg } from "./store.js";
 import { esc, uid, agora, modal, toast, dataBR, diaSemana } from "./util.js";
 
 /* ═══════ normalização ═══════ */
-const semAcento = s => String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
+export const semAcento = s => String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
 
-function normData(v){
+export function normData(v){
   const t = String(v||"").trim();
   if(!t) return "";
   let m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);                 // 2026-10-02
@@ -35,7 +35,7 @@ function normHora(v){
 }
 
 /* ═══════ CSV ═══════ */
-function separador(linha){
+export function separador(linha){
   const cand = [";", "\t", ",", "|"];
   let melhor = ",", max = 0;
   cand.forEach(c => {
@@ -45,7 +45,7 @@ function separador(linha){
   return max ? melhor : null;
 }
 
-function linhaCSV(linha, sep){
+export function linhaCSV(linha, sep){
   const out = []; let atual = "", aspas = false;
   for(let i = 0; i < linha.length; i++){
     const c = linha[i];

@@ -10,6 +10,22 @@ export const VIAGEM = {
   retorno:  "2026-10-13"
 };
 
+/* orçamento: pessoas e dias em solo italiano, usados nas médias */
+export const ORCAMENTO = {
+  pessoas: 2,
+  dias: 12,
+  cambioPadrao: 6.20,
+  categorias: [
+    "✈️ Passagens Aéreas",
+    "🏨 Hospedagem",
+    "🚄 Transporte Interno",
+    "🌊 Passeios — Florença e região",
+    "🏛️ Passeios — Roma",
+    "🍝 Alimentação",
+    "🧳 Extras"
+  ]
+};
+
 export const NUMEROS = [
   ["Passaporte válido até, no mínimo", "13/01/2027"],
   ["Passaporte emitido a partir de", "02/10/2016"],

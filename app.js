@@ -5,12 +5,14 @@ import * as vChecklist from "./view-checklist.js";
 import * as vRoteiro   from "./view-roteiro.js";
 import * as vEstadias  from "./view-estadias.js";
 import * as vDocs      from "./view-docs.js";
+import * as vOrcamento from "./view-orcamento.js";
 
 const ABAS = {
   checklist: { titulo:"Checklist", view:vChecklist },
   roteiro:   { titulo:"Roteiro",   view:vRoteiro   },
   estadias:  { titulo:"Estadias",  view:vEstadias  },
-  docs:      { titulo:"Documentos",view:vDocs      }
+  docs:      { titulo:"Documentos",view:vDocs      },
+  orcamento: { titulo:"Orçamento", view:vOrcamento }
 };
 let abaAtual = store.LS.get("roma2026:aba") || "checklist";
 
@@ -126,11 +128,12 @@ function desenhar(){
   const nDias = Object.keys(store.dados.roteiro).length;
   const nEst  = Object.keys(store.dados.estadias).length;
   const nDoc  = Object.keys(store.dados.docs).length + Object.keys(store.docsLocais).length;
+  const nOrc  = Object.keys(store.dados.orcamento || {}).length;
   const badge = (aba, n) => {
     const b = document.querySelector(`.tab[data-aba="${aba}"] .badge`);
     if(b){ b.textContent = n || ""; b.style.display = n ? "" : "none"; }
   };
-  badge("roteiro", nDias); badge("estadias", nEst); badge("docs", nDoc);
+  badge("roteiro", nDias); badge("estadias", nEst); badge("docs", nDoc); badge("orcamento", nOrc);
 }
 
 /* ═══════ conexão ═══════ */

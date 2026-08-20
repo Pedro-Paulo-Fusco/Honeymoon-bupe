@@ -369,3 +369,44 @@ html[data-tema="escuro"] .parada-cidade{color:var(--ambar)}
 .paradas .parada-cidade:first-child{border-top:0;padding-top:0;margin-top:4px}
 .parada-cidade + .parada{border-top:0}
 .filtrado{margin:6px 0 0;font-size:12px;color:var(--grigio);font-style:italic}
+
+/* ══ orçamento ══ */
+.tabs{gap:4px}
+.tab{font-size:10.5px;padding:9px 2px 8px}
+.badge{right:calc(50% - 22px)}
+
+.orc-topo{background:var(--brasa-deep);border-radius:var(--r);padding:18px;color:#fff;margin-bottom:16px}
+.orc-total small{display:block;font-family:"IBM Plex Mono",monospace;font-size:10px;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--creme-suave);opacity:.8}
+.orc-total b{display:block;font-family:"Bodoni Moda",Didot,serif;font-size:34px;
+  line-height:1.05;color:var(--ambar);margin-top:4px;font-weight:600}
+.orc-total span{display:block;font-size:12px;color:var(--creme-suave);opacity:.75;margin-top:3px}
+.orc-barra{height:5px;border-radius:99px;background:rgba(255,255,255,.16);overflow:hidden;margin:15px 0 9px}
+.orc-barra i{display:block;height:100%;background:var(--oliva);border-radius:99px;transition:width .45s}
+.orc-linha{display:flex;justify-content:space-between;font-size:12.5px;color:var(--creme-suave)}
+.orc-linha b{color:#fff;font-family:"IBM Plex Mono",monospace;font-size:12.5px;font-weight:500}
+.orc-grade{display:flex;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.14)}
+.orc-grade>div{flex:1;min-width:0;text-align:center}
+.orc-grade small{display:block;font-family:"IBM Plex Mono",monospace;font-size:9.5px;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--creme-suave);opacity:.75}
+.orc-grade b{display:block;font-family:"IBM Plex Mono",monospace;font-size:13px;color:#fff;margin-top:4px;font-weight:500}
+.orc-grade .clic{cursor:pointer;border-radius:8px;padding:2px 0;transition:.15s}
+.orc-grade .clic:hover{background:rgba(255,255,255,.1)}
+.orc-grade .clic b{color:var(--ambar)}
+
+.orc-item{display:flex;gap:12px;align-items:flex-start;padding:12px 0;
+  border-top:1px solid var(--linea);cursor:pointer;min-height:var(--tap)}
+.orc-txt{flex:1;min-width:0}
+.orc-txt b{display:block;font-size:14.5px;font-weight:500;line-height:1.35}
+.orc-txt small{display:block;font-family:"IBM Plex Mono",monospace;font-size:11px;
+  color:var(--grigio);margin-top:3px}
+.orc-txt em{display:block;font-style:normal;font-size:12.5px;color:var(--grigio);
+  opacity:.85;margin-top:4px;line-height:1.45}
+.orc-val{flex:0 0 auto;text-align:right;cursor:pointer;padding:2px 0 2px 6px;border-radius:8px}
+.orc-val:hover{background:var(--tag-opt-bg)}
+.orc-val b{display:block;font-family:"IBM Plex Mono",monospace;font-size:13.5px;color:var(--inchiostro)}
+.orc-val i{display:block;font-style:normal;font-family:"IBM Plex Mono",monospace;
+  font-size:10px;color:var(--grigio);margin-top:3px;letter-spacing:.03em}
+.orc-val i.ok{color:var(--oliva);font-weight:500}
+.orc-item.quitado .orc-txt b{color:var(--grigio)}
+.orc-item.quitado .orc-val b{color:var(--oliva)}

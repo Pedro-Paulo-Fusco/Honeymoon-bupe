@@ -186,6 +186,56 @@
           "$uid": {
             ".write": "auth != null && auth.uid === $uid"
           }
+        },
+        "orcamento": {
+          "$id": {
+            "cat": {
+              ".validate": "newData.isString() && newData.val().length <= 60"
+            },
+            "n": {
+              ".validate": "newData.isString() && newData.val().length <= 140"
+            },
+            "q": {
+              ".validate": "newData.isNumber()"
+            },
+            "vu": {
+              ".validate": "newData.isNumber() || (newData.isString() && newData.val().length == 0)"
+            },
+            "br": {
+              ".validate": "newData.isNumber() || (newData.isString() && newData.val().length == 0)"
+            },
+            "pg": {
+              ".validate": "newData.isNumber() || (newData.isString() && newData.val().length == 0)"
+            },
+            "obs": {
+              ".validate": "newData.isString() && newData.val().length <= 500"
+            },
+            "t": {
+              ".validate": "newData.isNumber()"
+            },
+            "w": {
+              ".validate": "newData.isString() && newData.val().length <= 20"
+            },
+            "$outro": {
+              ".validate": false
+            }
+          }
+        },
+        "conf": {
+          "$chave": {
+            "v": {
+              ".validate": "newData.isNumber()"
+            },
+            "t": {
+              ".validate": "newData.isNumber()"
+            },
+            "w": {
+              ".validate": "newData.isString() && newData.val().length <= 20"
+            },
+            "$outro": {
+              ".validate": false
+            }
+          }
         }
       }
     }
