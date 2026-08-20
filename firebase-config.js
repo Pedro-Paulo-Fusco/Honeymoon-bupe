@@ -1,4 +1,9 @@
-// Projeto: Honeymoon-2026 (honeymoon-2026-bupe)
+// ─────────────────────────────────────────────────────────────
+//  Projeto: Honeymoon-2026 (honeymoon-2026-bupe)
+//
+//  Estas chaves ficam visíveis no navegador por design — o que
+//  protege os dados são as regras do Realtime Database, não elas.
+// ─────────────────────────────────────────────────────────────
 
 export const firebaseConfig = {
   apiKey: "AIzaSyCe4nziLU7Ihh6nyLfVETm-JYROP9EEclI",
@@ -10,4 +15,5 @@ export const firebaseConfig = {
   appId: "1:460028716679:web:9dbc54d11851131db07a22"
 };
 
-export const configurado = !JSON.stringify(firebaseConfig).includes("COLE_AQUI");  
+// Não precisa mexer daqui para baixo.
+export const configurado = !JSON.stringify(firebaseConfig).includes("COLE_AQUI");

@@ -48,18 +48,28 @@ function barraProgresso(){
 /* ═══════ status de sincronia ═══════ */
 function status(){
   const dot = $("#dot"), msg = $("#sync-msg");
+  const semRede = !navigator.onLine;
   if(!store.configurado){
     dot.className = "dot err";
     msg.textContent = "Firebase não configurado — só neste aparelho";
+  } else if(semRede){
+    dot.className = "dot wait";
+    msg.textContent = "Sem conexão — funcionando offline";
   } else if(!store.cfg.code){
     dot.className = "dot";
     msg.textContent = "Só neste aparelho";
   } else if(store.online){
     dot.className = "dot on";
     msg.innerHTML = `Sincronizado · código <b>${esc(store.cfg.code)}</b>`;
+  } else if(store.motivoOffline === "regras"){
+    dot.className = "dot err";
+    msg.textContent = "Sem permissão no banco — republique as regras";
+  } else if(store.motivoOffline === "conexao"){
+    dot.className = "dot err";
+    msg.textContent = "Não deu para conectar. Confira domínio autorizado e login anônimo.";
   } else {
     dot.className = "dot wait";
-    msg.textContent = navigator.onLine ? "Conectando…" : "Sem conexão — tudo guardado aqui";
+    msg.textContent = "Conectando…";
   }
   $("#toggle-setup").textContent = store.cfg.code ? "Ajustar" : "Conectar";
   $("#who").textContent = store.presentes.length
@@ -141,6 +151,10 @@ function backup(){
 
 /* ═══════ início ═══════ */
 (async function init(){
+  /* o service worker precisa registrar antes de qualquer espera de rede */
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.register("./sw.js").catch(e => console.warn("SW:", e));
+  }
   cabecalho();
 
   document.querySelectorAll(".tab").forEach(b => {
@@ -166,13 +180,17 @@ function backup(){
 
   if(store.cfg.name) $("#name").value = store.cfg.name;
   if(store.cfg.code) $("#code").value = store.cfg.code;
+
+  /* 1º: pinta a tela com o que já está no aparelho */
+  await store.carregarLocal();
   trocarAba(abaAtual);
 
+  /* 2º: tenta o Firebase — se falhar, o app continua funcionando */
   const r = await store.iniciar();
   if(!r.ok && r.motivo === "config") $("#aviso").hidden = false;
   desenhar();
 
-  window.addEventListener("online",  () => { if(store.cfg.code) store.ouvir(); status(); });
+  window.addEventListener("online",  async () => { status(); await store.religar(); status(); });
   window.addEventListener("offline", status);
 
   /* instalar na tela inicial */
@@ -185,6 +203,4 @@ function backup(){
     deferred.prompt(); await deferred.userChoice;
     deferred = null; $("#install").classList.remove("show");
   };
-
-  if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
 })();

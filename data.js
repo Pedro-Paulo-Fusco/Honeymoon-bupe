@@ -1,8 +1,8 @@
 // Conteúdo do checklist. Para editar a viagem, mexa só neste arquivo.
 
 export const VIAGEM = {
-  destino: "Roma",
-  ano: "2026",
+  destino: "Honeymoon",
+  ano: "Bupe 2026",
   rota: "GRU → FCO",
   periodo: "01 OUT — 13 OUT",
   noites: "12 NOITES",

@@ -1,14 +1,10 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged }
-  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getDatabase, ref, onValue, set, update, remove, get, onDisconnect, serverTimestamp }
-  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-import { firebaseConfig, configurado } from "./firebase-config.js";
-import { agora } from "./util.js";
+/* Sincronização e armazenamento.
+   O Firebase é carregado sob demanda: se não houver internet, o import falha
+   em silêncio e o app segue funcionando com o espelho local (IndexedDB). */
 
-/* ═══════ estado em memória ═══════
-   dados = { items, extra, roteiro, estadias, docs }
-   docsLocais = documentos que o usuário escolheu não sincronizar          */
+import { firebaseConfig, configurado } from "./firebase-config.js";
+
+const SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
 
 /* preferências pequenas ficam no localStorage */
 export const LS = {
@@ -20,13 +16,15 @@ export const dados = { items:{}, extra:{}, roteiro:{}, estadias:{}, docs:{} };
 export let docsLocais = {};
 export let cfg = LS.get("roma2026:cfg") || { code:"", name:"" };
 export let online = false;
+export let presentes = [];
+export let motivoOffline = "";
 
-let db = null, uid = null, unsubs = [], ouvintes = [];
+let FB = null, db = null, uid = null, unsubs = [], ouvintes = [], cacheCarregado = false;
 
 export const aoMudar = fn => { ouvintes.push(fn); };
 const avisar = () => ouvintes.forEach(f => { try{ f(); }catch(e){ console.error(e); } });
 
-/* ═══════ IndexedDB: espelho offline (aguenta as imagens) ═══════ */
+/* ═══════ IndexedDB: espelho offline ═══════ */
 const DB_NAME = "roma2026", STORE = "cache";
 function idb(){
   return new Promise((ok, erro) => {
@@ -44,7 +42,7 @@ export async function idbGet(k){
       t.onsuccess = () => ok(t.result ?? null);
       t.onerror = () => erro(t.error);
     });
-  }catch(e){ return null; }
+  }catch(e){ console.warn("cache indisponível", e); return null; }
 }
 export async function idbSet(k, v){
   try{
@@ -54,46 +52,74 @@ export async function idbSet(k, v){
       t.onsuccess = () => ok();
       t.onerror = () => erro(t.error);
     });
-  }catch(e){ console.warn("cache local indisponível", e); }
+  }catch(e){ console.warn("cache indisponível", e); }
+}
+const salvarCache = () => idbSet("dados", JSON.parse(JSON.stringify(dados)));
+
+/* ═══════ espelho local — funciona com ou sem rede ═══════ */
+export async function carregarLocal(){
+  if(cacheCarregado) return;
+  cacheCarregado = true;
+  const cache = await idbGet("dados");
+  if(cache) for(const k in dados) if(cache[k]) dados[k] = cache[k];
+  docsLocais = await idbGet("docsLocais") || {};
+  avisar();
 }
 
-/* ═══════ Firebase ═══════ */
-export async function iniciar(){
-  if(db){ if(cfg.code && !unsubs.length) ouvir(); return { ok:true }; }
-  const cache  = await idbGet("dados");
-  if(cache) Object.assign(dados, cache);
-  docsLocais   = await idbGet("docsLocais") || {};
-  avisar();
+/* ═══════ Firebase sob demanda ═══════ */
+async function carregarSDK(){
+  if(FB) return FB;
+  const [app, auth, rtdb] = await Promise.all([
+    import(SDK + "firebase-app.js"),
+    import(SDK + "firebase-auth.js"),
+    import(SDK + "firebase-database.js")
+  ]);
+  FB = { ...app, ...auth, ...rtdb };
+  return FB;
+}
 
-  if(!configurado) return { ok:false, motivo:"config" };
+export async function iniciar(){
+  await carregarLocal();
+
+  if(!configurado){ motivoOffline = "config"; return { ok:false, motivo:"config" }; }
+  if(db){ if(cfg.code && !unsubs.length) ouvir(); return { ok:true }; }
+
   try{
-    const app = initializeApp(firebaseConfig);
-    db = getDatabase(app);
-    const auth = getAuth(app);
-    await signInAnonymously(auth);
-    await new Promise(r => onAuthStateChanged(auth, u => { if(u){ uid = u.uid; r(); } }));
+    const f = await carregarSDK();
+    const app  = f.initializeApp(firebaseConfig);
+    db = f.getDatabase(app);
+    const auth = f.getAuth(app);
+    await f.signInAnonymously(auth);
+    await new Promise((res, rej) => {
+      const t = setTimeout(() => rej(new Error("timeout")), 15000);
+      f.onAuthStateChanged(auth, u => { if(u){ clearTimeout(t); uid = u.uid; res(); } });
+    });
+    motivoOffline = "";
     if(cfg.code) ouvir();
     return { ok:true };
   }catch(e){
-    console.error(e);
-    return { ok:false, motivo:"conexao", erro:e };
+    console.warn("Firebase indisponível — seguindo offline.", e);
+    db = null; FB = null;
+    motivoOffline = navigator.onLine ? "conexao" : "offline";
+    avisar();
+    return { ok:false, motivo: motivoOffline, erro:e };
   }
 }
 
 const RAMOS = ["items","extra","roteiro","estadias","docs"];
+const caminho = (ramo, id) => `trips/${cfg.code}/${ramo}${id ? "/"+id : ""}`;
 
 export function ouvir(){
   parar();
-  if(!db || !cfg.code) return;
+  if(!db || !cfg.code || !FB) return;
   RAMOS.forEach(ramo => {
-    const r = ref(db, `trips/${cfg.code}/${ramo}`);
-    const u = onValue(r, snap => {
+    const u = FB.onValue(FB.ref(db, caminho(ramo)), snap => {
       dados[ramo] = snap.val() || {};
       online = true;
-      idbSet("dados", JSON.parse(JSON.stringify(dados)));
+      salvarCache();
       avisar();
     }, err => {
-      console.error(err); online = false; avisar();
+      console.error(err); online = false; motivoOffline = "regras"; avisar();
     });
     unsubs.push(u);
   });
@@ -104,14 +130,12 @@ export function parar(){
   unsubs = [];
 }
 
-/* ── presença ── */
-export let presentes = [];
 function presenca(){
-  if(!db || !uid || !cfg.code) return;
-  const meu = ref(db, `trips/${cfg.code}/present/${uid}`);
-  set(meu, { name: cfg.name || "alguém", at: serverTimestamp() }).catch(()=>{});
-  onDisconnect(meu).remove();
-  const u = onValue(ref(db, `trips/${cfg.code}/present`), s => {
+  if(!db || !uid || !cfg.code || !FB) return;
+  const meu = FB.ref(db, `trips/${cfg.code}/present/${uid}`);
+  FB.set(meu, { name: cfg.name || "alguém", at: FB.serverTimestamp() }).catch(()=>{});
+  FB.onDisconnect(meu).remove();
+  const u = FB.onValue(FB.ref(db, `trips/${cfg.code}/present`), s => {
     const p = s.val() || {};
     presentes = Object.keys(p).filter(k => k !== uid).map(k => p[k].name);
     avisar();
@@ -119,32 +143,26 @@ function presenca(){
   unsubs.push(u);
 }
 
-/* ═══════ escrita ═══════ */
-function caminho(ramo, id){ return `trips/${cfg.code}/${ramo}${id ? "/"+id : ""}`; }
-
+/* ═══════ escrita otimista: aplica local, tenta enviar ═══════ */
 export async function gravar(ramo, id, valor){
-  /* otimista: aplica local, depois envia */
-  if(valor === null){ delete dados[ramo][id]; }
-  else { dados[ramo][id] = valor; }
-  idbSet("dados", JSON.parse(JSON.stringify(dados)));
+  if(valor === null) delete dados[ramo][id];
+  else dados[ramo][id] = valor;
+  salvarCache();
   avisar();
-  if(!db || !cfg.code) return { ok:false, local:true };
+  if(!db || !cfg.code || !FB) return { ok:false, local:true };
   try{
-    if(valor === null) await remove(ref(db, caminho(ramo, id)));
-    else await set(ref(db, caminho(ramo, id)), valor);
+    if(valor === null) await FB.remove(FB.ref(db, caminho(ramo, id)));
+    else await FB.set(FB.ref(db, caminho(ramo, id)), valor);
     return { ok:true };
-  }catch(e){
-    console.error(e);
-    return { ok:false, erro:e };
-  }
+  }catch(e){ console.error(e); return { ok:false, erro:e }; }
 }
 
 export async function gravarLote(ramo, obj){
   Object.assign(dados[ramo], obj);
-  idbSet("dados", JSON.parse(JSON.stringify(dados)));
+  salvarCache();
   avisar();
-  if(!db || !cfg.code) return { ok:false, local:true };
-  try{ await update(ref(db, caminho(ramo)), obj); return { ok:true }; }
+  if(!db || !cfg.code || !FB) return { ok:false, local:true };
+  try{ await FB.update(FB.ref(db, caminho(ramo)), obj); return { ok:true }; }
   catch(e){ console.error(e); return { ok:false, erro:e }; }
 }
 
@@ -164,18 +182,17 @@ export async function conectar(code, name){
     const r = await iniciar();
     if(!r.ok) return r;
   }
-  /* sobe o que só existe local */
   try{
     for(const ramo of RAMOS){
       if(!Object.keys(dados[ramo]).length) continue;
-      const snap = await get(ref(db, caminho(ramo)));
+      const snap = await FB.get(FB.ref(db, caminho(ramo)));
       const remoto = snap.val() || {};
       const envio = {};
       for(const id in dados[ramo]){
         const l = dados[ramo][id], r = remoto[id];
         if(!r || (l.t || 0) > (r.t || 0)) envio[id] = l;
       }
-      if(Object.keys(envio).length) await update(ref(db, caminho(ramo)), envio);
+      if(Object.keys(envio).length) await FB.update(FB.ref(db, caminho(ramo)), envio);
     }
   }catch(e){ console.error(e); }
   ouvir();
@@ -184,7 +201,7 @@ export async function conectar(code, name){
 
 export function desconectar(){
   parar();
-  if(db && cfg.code && uid) set(ref(db, `trips/${cfg.code}/present/${uid}`), null).catch(()=>{});
+  if(db && cfg.code && uid && FB) FB.set(FB.ref(db, `trips/${cfg.code}/present/${uid}`), null).catch(()=>{});
   cfg = { code:"", name: cfg.name };
   LS.set("roma2026:cfg", cfg);
   presentes = [];
@@ -192,6 +209,12 @@ export function desconectar(){
   avisar();
 }
 
+/* tenta reconectar quando a rede volta */
+export async function religar(){
+  if(!configurado) return;
+  if(!db) await iniciar();
+  else if(cfg.code && !unsubs.length) ouvir();
+}
+
 export const estaConectado = () => !!(db && cfg.code);
-export const temFirebase   = () => !!db;
 export { configurado };
