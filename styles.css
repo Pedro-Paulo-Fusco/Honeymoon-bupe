@@ -343,3 +343,14 @@ html[data-tema="escuro"] #tema .sol{display:none}
 .dia .paradas{margin-top:4px}
 .chip.acao-chip{border-style:dashed;color:var(--brasa)}
 html[data-tema="escuro"] .chip.acao-chip{color:var(--ambar)}
+
+
+/* ══ importador ══ */
+.add-inline.importar{margin-top:2px}
+.prev{border:1px solid var(--linea);border-radius:10px;overflow:hidden;margin:4px 0 14px}
+.prev-dia{padding:10px 12px;border-top:1px solid var(--linea)}
+.prev-dia:first-child{border-top:0}
+.prev-dia b{display:block;font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--brasa)}
+html[data-tema="escuro"] .prev-dia b{color:var(--ambar)}
+.prev-dia span{display:block;font-size:12.5px;color:var(--grigio);margin-top:2px}
+.prev-dia small{display:block;font-size:12px;color:var(--grigio);opacity:.85;margin-top:4px;line-height:1.45}

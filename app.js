@@ -1,10 +1,10 @@
 import { VIAGEM, NUMEROS } from "./data.js";
 import * as store from "./store.js";
 import { $, esc, toast, modal, campo, confirmar, dataBR } from "./util.js";
-import * as vChecklist from "./views/checklist.js";
-import * as vRoteiro   from "./views/roteiro.js";
-import * as vEstadias  from "./views/estadias.js";
-import * as vDocs      from "./views/docs.js";
+import * as vChecklist from "./view-checklist.js";
+import * as vRoteiro   from "./view-roteiro.js";
+import * as vEstadias  from "./view-estadias.js";
+import * as vDocs      from "./view-docs.js";
 
 const ABAS = {
   checklist: { titulo:"Checklist", view:vChecklist },

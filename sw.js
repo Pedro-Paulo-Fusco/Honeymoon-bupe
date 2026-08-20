@@ -1,12 +1,12 @@
 /* Service worker — versão 3.
    Ao editar qualquer arquivo do app, suba este número. */
-const CACHE  = "bupe2026-v4";
-const EXTERN = "bupe2026-ext-v4";
+const CACHE  = "bupe2026-v5";
+const EXTERN = "bupe2026-ext-v5";
 
 const SHELL = [
   "./","./index.html","./styles.css","./app.js","./store.js","./util.js","./data.js",
   "./firebase-config.js","./manifest.json",
-  "./views/checklist.js","./views/roteiro.js","./views/estadias.js","./views/docs.js",
+  "./view-checklist.js","./view-roteiro.js","./view-estadias.js","./view-docs.js","./importador.js",
   "./icons/icon-192.png","./icons/icon-512.png","./icons/apple-touch-icon.png","./icons/favicon.png"
 ];
 
