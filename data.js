@@ -1,19 +1,30 @@
 // Conteúdo do checklist. Para editar a viagem, mexa só neste arquivo.
 
+/* As datas são a única fonte: tudo o mais é contado a partir delas, para que
+   noites, dias em solo e dias corridos não possam divergir com o tempo.
+   São três medidas diferentes da mesma viagem, e cada uma tem seu uso. */
+const EMBARQUE = "2026-10-01";   // AAAA-MM-DD
+const RETORNO  = "2026-10-13";
+
+const dia = iso => new Date(iso + "T00:00:00");
+const NOITES = Math.round((dia(RETORNO) - dia(EMBARQUE)) / 864e5);  // 12
+const DIAS_CORRIDOS = NOITES + 1;                                   // 13, contando as duas pontas
+const DIAS_EM_SOLO  = NOITES;      // sai dia 1, pisa na Itália dia 2, volta dia 13
+
 export const VIAGEM = {
   destino: "Honeymoon",
   ano: "Bupe 2026",
   rota: "GRU → FCO",
   periodo: "01 OUT — 13 OUT",
-  noites: "12 NOITES",
-  embarque: "2026-10-01",   // AAAA-MM-DD
-  retorno:  "2026-10-13"
+  noites: `${NOITES} NOITES`,
+  embarque: EMBARQUE,
+  retorno:  RETORNO
 };
 
 /* orçamento: pessoas e dias em solo italiano, usados nas médias */
 export const ORCAMENTO = {
   pessoas: 2,
-  dias: 12,
+  dias: DIAS_EM_SOLO,
   cambioPadrao: 6.20,
   categorias: [
     "✈️ Passagens Aéreas",
@@ -30,7 +41,7 @@ export const NUMEROS = [
   ["Passaporte válido até, no mínimo", "13/01/2027"],
   ["Passaporte emitido a partir de", "02/10/2016"],
   ["Cobertura médica do seguro", "€ 30.000"],
-  ["Subsistência de referência (13 dias)", "≈ € 780 / pessoa"],
+  [`Subsistência de referência (${DIAS_CORRIDOS} dias corridos)`, "≈ € 780 / pessoa"],
   ["Dinheiro em espécie sem declarar (casal)", "até € 10.000"],
   ["Chegada em Guarulhos", "3 h antes"]
 ];

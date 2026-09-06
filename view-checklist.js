@@ -1,8 +1,27 @@
 import { TAPPE } from "./data.js";
-import { dados, gravar, gravarLote, cfg } from "./store.js";
+import { dados, gravar, gravarLote, cfg, LS } from "./store.js";
 import { esc, nl, uid, agora, modal, campo, confirmar, toast } from "./util.js";
 
 const FASE_EXTRA = "extras";
+
+/* ── estado da tela (só neste aparelho) ──
+   Sem isto, todo `gravar` redesenha a lista e reabre tudo que você fechou —
+   inclusive ao marcar uma caixa, que é justamente o que se veio fazer aqui.
+   Uma fase só entra em `abertas` depois que você mexe nela: até lá vale o
+   padrão (aberta enquanto houver pendência, fechada quando estiver pronta). */
+let abertas = LS.get("bupe:fasesAbertas") || {};
+/* Fases mexidas nesta sessão. Não é persistido de propósito: ao completar a
+   última caixa, a fase precisa continuar aberta debaixo do dedo — mas numa
+   próxima abertura do app o que está pronto volta a ficar recolhido. */
+const mexidasAgora = new Set();
+const estaAberta = (id, pronto) =>
+  (id in abertas) ? !!abertas[id] : (mexidasAgora.has(id) || !pronto);
+function alternarFase(id, sec, head){
+  const ab = sec.classList.toggle("open");
+  head.setAttribute("aria-expanded", ab ? "true" : "false");
+  abertas[id] = ab;
+  LS.set("bupe:fasesAbertas", abertas);
+}
 
 /* junta itens fixos + criados por vocês */
 function fases(){
@@ -27,7 +46,9 @@ export function progresso(){
   return { feitos, total: todos.length };
 }
 
-async function alternar(id, marcado){
+async function alternar(id, faseId, marcado){
+  /* você está trabalhando nesta fase: ela não some sozinha ao ficar completa */
+  mexidasAgora.add(faseId);
   await gravar("items", id, { v: !marcado, t: agora(), w: cfg.name || "" });
 }
 
@@ -77,9 +98,13 @@ function editarItem(item){
       label: "Excluir",
       onClick: async () => {
         if(!await confirmar("Excluir este item do checklist?")) return;
+        const antesExtra = dados.extra[item.id], antesItem = dados.items[item.id];
         await gravar("extra", item.id, null);
         await gravar("items", item.id, null);
-        toast("Item excluído");
+        toast("Item excluído", { label:"Desfazer", onClick: async () => {
+          await gravar("extra", item.id, antesExtra);
+          if(antesItem) await gravar("items", item.id, antesItem);
+        }});
       }
     }
   });
@@ -94,21 +119,19 @@ export function render(el){
     const feitos = fase.items.filter(it => dados.items[it.id]?.v).length;
     const pronto = fase.items.length > 0 && feitos === fase.items.length;
 
+    const aberta = estaAberta(fase.id, pronto);
     const sec = document.createElement("section");
-    sec.className = "tappa" + (pronto ? " done" : " open");
+    sec.className = "tappa" + (pronto ? " done" : "") + (aberta ? " open" : "");
 
     const head = document.createElement("button");
     head.className = "head";
-    head.setAttribute("aria-expanded", pronto ? "false" : "true");
+    head.setAttribute("aria-expanded", aberta ? "true" : "false");
     head.innerHTML =
       `<span class="num">${fase.id === FASE_EXTRA ? "+" : i+1}</span>
        <span class="head-txt"><h2>${esc(fase.titulo)}</h2><span class="when">${esc(fase.quando)}</span></span>
        <span class="pill">${fase.items.length ? (pronto ? "tudo pronto" : feitos+"/"+fase.items.length) : "vazio"}</span>
        <span class="chev"></span>`;
-    head.onclick = () => {
-      const ab = sec.classList.toggle("open");
-      head.setAttribute("aria-expanded", ab ? "true" : "false");
-    };
+    head.onclick = () => alternarFase(fase.id, sec, head);
     sec.appendChild(head);
 
     const body = document.createElement("div");
@@ -130,7 +153,7 @@ export function render(el){
          ${!it.fixo ? `<button class="mini" aria-label="Editar">✎</button>` : ""}`;
 
       const box = row.querySelector(".box");
-      const marcar = () => alternar(it.id, on);
+      const marcar = () => alternar(it.id, fase.id, on);
       box.onclick = marcar;
       box.onkeydown = e => { if(e.key===" "||e.key==="Enter"){ e.preventDefault(); marcar(); } };
       row.querySelector(".txt").onclick = marcar;

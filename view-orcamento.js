@@ -1,6 +1,6 @@
 import { ORCAMENTO } from "./data.js";
-import { dados, gravar, gravarLote, cfg, LS } from "./store.js";
-import { esc, nl, uid, agora, modal, campo, confirmar, toast } from "./util.js";
+import { dados, gravar, gravarLote, gravarSub, pendente, cfg, LS } from "./store.js";
+import { esc, nl, uid, agora, modal, campo, confirmar, toast, autoria, dataBR, fecharModal } from "./util.js";
 import { separador, linhaCSV, semAcento } from "./importador.js";
 
 /* orcamento/{id} = { cat, n, q, vu, br, pg, obs, t, w }
@@ -19,12 +19,23 @@ const brl = n => "R$ " + (n || 0).toLocaleString("pt-BR", { minimumFractionDigit
 const eur = n => "€ " + (n || 0).toLocaleString("pt-BR", { minimumFractionDigits:0, maximumFractionDigits:0 });
 
 /* ═══════ cálculo ═══════ */
+/* Cada pagamento é um lançamento próprio, com valor, data e autor. `pg` é o
+   campo antigo (um total único, sobrescrito a cada edição) e continua valendo
+   como saldo inicial, para que orçamentos já preenchidos não percam nada. */
+export function pagamentosDe(i){
+  return Object.entries(i.pagamentos || {})
+    .map(([id, p]) => ({ id, ...p }))
+    .sort((a, b) => (a.t || 0) - (b.t || 0));
+}
+const somaPagamentos = i =>
+  pagamentosDe(i).reduce((s, p) => s + (Number(p.v) || 0), 0);
+
 export function totalItem(i){
   const q = Number(i.q) || 1;
   const euros = (Number(i.vu) || 0) * q;
   const direto = Number(i.br) || 0;          /* valor já em real: total, não unitário */
   const reais = direto ? direto : euros * cambio();
-  const pago = Number(i.pg) || 0;
+  const pago = (Number(i.pg) || 0) + somaPagamentos(i);
   return { euros, reais, pago, saldo: reais - pago };
 }
 
@@ -130,30 +141,58 @@ function editarItem(i){
     },
     extra: { label:"Excluir", onClick: async () => {
       if(!await confirmar(`Excluir "${i.n}" do orçamento?`)) return;
-      await gravar("orcamento", i.id, null); toast("Item excluído");
+      const antes = dados.orcamento[i.id];
+      await gravar("orcamento", i.id, null);
+      toast("Item excluído", { label:"Desfazer",
+        onClick: () => gravar("orcamento", i.id, antes) });
     }}
   });
 }
 
 function quitar(i){
   const t = totalItem(i);
+  const falta = Math.max(0, t.saldo);
+  const hist = pagamentosDe(i);
   modal({
     titulo: "Registrar pagamento",
     corpo: `
-      <p class="conf"><b>${esc(i.n)}</b><br>Total: ${brl(t.reais)} · já pago: ${brl(t.pago)}</p>
-      ${campo("o-pago", "Total pago até agora (R$)", "number", t.pago || "", 'min="0" step="0.01"')}
-      <button class="add-inline" id="o-tudo">marcar como totalmente pago (${brl(t.reais)})</button>`,
-    salvar: "Salvar",
+      <p class="conf"><b>${esc(i.n)}</b><br>
+        Total: ${brl(t.reais)} · já pago: ${brl(t.pago)} · falta ${brl(falta)}</p>
+      ${campo("o-pago", "Valor deste pagamento (R$)", "number",
+        falta > 0 ? falta.toFixed(2) : "", 'min="0" step="0.01"')}
+      ${falta > 0 ? `<button class="add-inline" id="o-tudo">pagar o que falta (${brl(falta)})</button>` : ""}
+      ${hist.length ? `<div class="pagamentos">
+        <label>Pagamentos lançados</label>
+        ${hist.map(p => `<div class="pag"><b>${brl(p.v)}</b>
+          <span>${p.w ? esc(p.w) + " · " : ""}${dataBR(new Date(p.t || 0).toISOString().slice(0,10))}</span>
+          <button class="pag-x" data-pag="${esc(p.id)}" aria-label="Remover este lançamento">✕</button>
+        </div>`).join("")}
+      </div>` : ""}`,
+    salvar: "Registrar",
     onSalvar: async back => {
-      const v = back.querySelector("#o-pago").value.trim().replace(",", ".");
-      await gravar("orcamento", i.id, { ...dados.orcamento[i.id], pg: v === "" ? "" : Number(v), t: agora() });
+      const bruto = back.querySelector("#o-pago").value.trim().replace(",", ".");
+      const v = Number(bruto);
+      if(!bruto || !isFinite(v) || v <= 0){ toast("Informe o valor deste pagamento."); return false; }
+      /* grava só o lançamento: dois celulares podem pagar partes do mesmo
+         item sem que um apague o registro do outro */
+      await gravarSub("orcamento", i.id, `pagamentos/p${uid()}`,
+        { v, t: agora(), w: cfg.name || "" });
       toast("Pagamento registrado");
     }
   });
-  document.getElementById("o-tudo").onclick = e => {
+  const tudo = document.getElementById("o-tudo");
+  if(tudo) tudo.onclick = e => {
     e.preventDefault();
-    document.getElementById("o-pago").value = t.reais.toFixed(2);
+    document.getElementById("o-pago").value = falta.toFixed(2);
   };
+  document.querySelectorAll(".pag-x").forEach(b => {
+    b.onclick = async e => {
+      e.preventDefault();
+      await gravarSub("orcamento", i.id, `pagamentos/${b.dataset.pag}`, null);
+      fecharModal();
+      toast("Lançamento removido");
+    };
+  });
 }
 
 function editarCambio(){
@@ -368,6 +407,8 @@ export function render(el){
             i.vu ? eur(i.vu) : "valor em real"}${
             ti.pago > 0 && !quitado ? ` · pago ${brl(ti.pago)}` : ""}</small>
           ${i.obs ? `<em>${nl(i.obs)}</em>` : ""}
+          ${autoria(i, cfg.name)}
+          ${pendente("orcamento", i.id) ? `<span class="tag pend">não enviado</span>` : ""}
         </span>
         <span class="orc-val">
           <b>${brl(ti.reais)}</b>

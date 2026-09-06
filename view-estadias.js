@@ -1,5 +1,5 @@
-import { dados, gravar, cfg } from "./store.js";
-import { esc, nl, uid, agora, modal, campo, confirmar, toast,
+import { dados, gravar, pendente, cfg } from "./store.js";
+import { esc, nl, uid, agora, modal, campo, confirmar, toast, autoria,
          dataBR, noites, comprimirImagem, pesoDataURL, kb } from "./util.js";
 
 /* estadias/{id} = { n, cidade, end, entrada, saida, ref, tel, nota, fotos:{fid:{d}}, t, w } */
@@ -62,7 +62,10 @@ function editar(e){
     },
     extra: { label:"Excluir", onClick: async () => {
       if(!await confirmar(`Excluir "${e.n}" e as fotos dela?`)) return;
-      await gravar("estadias", e.id, null); toast("Hospedagem excluída");
+      const antes = dados.estadias[e.id];
+      await gravar("estadias", e.id, null);
+      toast("Hospedagem excluída", { label:"Desfazer",
+        onClick: () => gravar("estadias", e.id, antes) });
     }}
   });
 }
@@ -124,6 +127,8 @@ export function render(el){
         <div>
           <h2>${esc(e.n)}</h2>
           ${e.cidade ? `<span class="when">${esc(e.cidade)}</span>` : ""}
+          ${autoria(e, cfg.name)}
+          ${pendente("estadias", e.id) ? `<span class="tag pend">não enviado</span>` : ""}
         </div>
         <button class="mini" aria-label="Editar">✎</button>
       </div>

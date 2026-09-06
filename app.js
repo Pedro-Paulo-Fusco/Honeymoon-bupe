@@ -51,16 +51,21 @@ function contagem(){
   const hoje = new Date(); hoje.setHours(0,0,0,0);
   const d = Math.round((voo - hoje) / 864e5);
   const n = $("#dias"), l = $("#dias-lbl");
-  if(d > 1){ n.textContent = d; l.textContent = "dias para o embarque"; }
-  else if(d === 1){ n.textContent = "1"; l.textContent = "dia para o embarque"; }
-  else if(d === 0){ n.textContent = "Hoje"; l.textContent = "é o dia. Buon viaggio."; }
-  else if(d > -14){ n.textContent = "Ciao"; l.textContent = "vocês estão na Itália"; }
-  else { n.textContent = "✓"; l.textContent = "viagem concluída"; }
+  /* o mesmo estado, dito curto o bastante para caber na faixa recolhida */
+  let curto;
+  if(d > 1){ n.textContent = d; l.textContent = "dias para o embarque"; curto = "dias"; }
+  else if(d === 1){ n.textContent = "1"; l.textContent = "dia para o embarque"; curto = "dia"; }
+  else if(d === 0){ n.textContent = "Hoje"; l.textContent = "é o dia. Buon viaggio."; curto = "buon viaggio"; }
+  else if(d > -14){ n.textContent = "Ciao"; l.textContent = "vocês estão na Itália"; curto = "na Itália"; }
+  else { n.textContent = "✓"; l.textContent = "viagem concluída"; curto = "concluída"; }
+  $("#mini-dias").textContent = n.textContent;
+  $("#mini-lbl").textContent = curto;
 }
 
 function cabecalho(){
   $("#destino").innerHTML = `${esc(VIAGEM.destino)}<br><em>${esc(VIAGEM.ano)}</em>`;
   $("#route").textContent = `${VIAGEM.rota}  ·  ${VIAGEM.periodo}  ·  ${VIAGEM.noites}`;
+  $("#mini-destino").textContent = VIAGEM.ano;
   $("#facts-list").innerHTML = NUMEROS
     .map(([k,v]) => `<div class="fact"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("");
   contagem();
@@ -70,37 +75,83 @@ function barraProgresso(){
   const { feitos, total } = vChecklist.progresso();
   const pct = total ? Math.round(feitos/total*100) : 0;
   $("#fill").style.width = pct + "%";
+  /* scaleX em vez de width: anima no compositor, não no layout */
+  $("#mini-fill").style.transform = `scaleX(${pct/100})`;
   $("#prog").textContent = `${feitos} de ${total} itens`;
   $("#pct").textContent = pct + "%";
-  if(total && feitos === total) $("#dias-lbl").textContent = "tudo resolvido. Buon viaggio.";
+  if(total && feitos === total){
+    $("#dias-lbl").textContent = "tudo resolvido. Buon viaggio.";
+    $("#mini-lbl").textContent = "tudo pronto";
+  }
+}
+
+/* Cabeçalho recolhido: o bloco inteiro custa ~490px antes da primeira linha
+   de conteúdo. Quando ele sai de vista, a faixa fixa assume destino,
+   contagem e progresso, e as abas continuam ancoradas no topo. */
+function observarCabecalho(){
+  const barra = $("#barra"), stub = $("#stub"), mini = $("#mini");
+  if(!("IntersectionObserver" in window)) return;
+  new IntersectionObserver(([e]) => {
+    barra.classList.toggle("recolhida", !e.isIntersecting);
+    mini.setAttribute("aria-hidden", e.isIntersecting ? "true" : "false");
+  }, { threshold: 0 }).observe(stub);
 }
 
 /* ═══════ status de sincronia ═══════ */
+/* Aberto pela pastilha: o painel fica visível mesmo quando está tudo certo. */
+let painelSync = false;
+
 function status(){
   const dot = $("#dot"), msg = $("#sync-msg");
   const semRede = !navigator.onLine;
+  let curto, tudoBem = false;
   if(!store.configurado){
     dot.className = "dot err";
     msg.textContent = "Firebase não configurado — só neste aparelho";
+    curto = "Só neste aparelho";
   } else if(semRede){
     dot.className = "dot wait";
     msg.textContent = "Sem conexão — funcionando offline";
+    curto = "Offline";
   } else if(!store.cfg.code){
     dot.className = "dot";
     msg.textContent = "Só neste aparelho";
+    curto = "Conectar";
+    tudoBem = true;   /* escolha deliberada, não é erro: a pastilha já convida a conectar */
   } else if(store.online){
-    dot.className = "dot on";
-    msg.innerHTML = `Sincronizado · código <b>${esc(store.cfg.code)}</b>`;
+    const p = store.totalPendentes();
+    if(p){
+      dot.className = "dot wait";
+      msg.innerHTML = `${p} ${p > 1 ? "alterações ainda não subiram" : "alteração ainda não subiu"} · código <b>${esc(store.cfg.code)}</b>`;
+      curto = p + " não " + (p > 1 ? "enviadas" : "enviada");
+    } else {
+      dot.className = "dot on";
+      msg.innerHTML = `Sincronizado · código <b>${esc(store.cfg.code)}</b>`;
+      curto = "Sincronizado";
+      tudoBem = true;
+    }
   } else if(store.motivoOffline === "regras"){
     dot.className = "dot err";
     msg.textContent = "Sem permissão no banco — republique as regras";
+    curto = "Sem permissão";
   } else if(store.motivoOffline === "conexao"){
     dot.className = "dot err";
     msg.textContent = "Não deu para conectar. Confira domínio autorizado e login anônimo.";
+    curto = "Sem conexão";
   } else {
     dot.className = "dot wait";
     msg.textContent = "Conectando…";
+    curto = "Conectando…";
   }
+  $("#dot2").className = dot.className;
+  $("#chip-lbl").textContent = curto;
+
+  /* O cartão inteiro só ocupa a tela quando tem algo que a pastilha não diz:
+     uma falha para explicar, ou o painel aberto de propósito. */
+  const mostrar = !tudoBem || painelSync;
+  $("#sync").hidden = !mostrar;
+  $("#sync-chip").setAttribute("aria-expanded", mostrar ? "true" : "false");
+
   $("#toggle-setup").textContent = store.cfg.code ? "Ajustar" : "Conectar";
   $("#who").textContent = store.presentes.length
     ? `${store.presentes.join(" e ")} ${store.presentes.length>1?"estão":"está"} com o app aberto agora`
@@ -121,7 +172,11 @@ function trocarAba(id){
 
 function desenhar(){
   const el = $("#view");
+  /* Todo gravar() chama desenhar(). Sem guardar a rolagem, marcar uma caixa
+     no fim da lista joga a página para outro lugar debaixo do polegar. */
+  const y = window.scrollY;
   ABAS[abaAtual].view.render(el);
+  if(window.scrollY !== y) window.scrollTo({ top:y, behavior:"instant" });
   barraProgresso();
   status();
   /* contadores das abas */
@@ -134,14 +189,26 @@ function desenhar(){
     if(b){ b.textContent = n || ""; b.style.display = n ? "" : "none"; }
   };
   badge("roteiro", nDias); badge("estadias", nEst); badge("docs", nDoc); badge("orcamento", nOrc);
+  /* "Números que não podem falhar" é contexto do checklist, não do app inteiro */
+  $("#facts").hidden = abaAtual !== "checklist";
 }
 
 /* ═══════ conexão ═══════ */
+/* Este código é a única credencial que protege os documentos sincronizados:
+   quem o souber lê tudo, inclusive foto de passaporte. Math.random() não é
+   criptográfico e é previsível o bastante para ser adivinhado. */
+const ALFABETO = "abcdefghijkmnopqrstuvwxyz23456789";   /* sem l/1 e o/0 */
+function codigoAleatorio(n){
+  const bytes = new Uint8Array(n);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, b => ALFABETO[b % ALFABETO.length]).join("");
+}
+
 function abrirSetup(){
   const box = $("#setup");
   box.classList.toggle("open");
   if(!$("#code").value && !store.cfg.code){
-    $("#code").value = "roma-" + Math.random().toString(36).slice(2, 10);
+    $("#code").value = "bupe-" + codigoAleatorio(8);
   }
 }
 
@@ -159,6 +226,7 @@ async function conectar(){
       : "Não deu para conectar. Confira domínio autorizado e login anônimo.";
     return;
   }
+  painelSync = false;
   $("#setup").classList.remove("open");
   toast("Conectado");
 }
@@ -188,10 +256,21 @@ function backup(){
   }
   iniciarTema();
   cabecalho();
+  observarCabecalho();
 
   document.querySelectorAll(".tab").forEach(b => {
     b.onclick = () => trocarAba(b.dataset.aba);
   });
+  $("#sync-chip").onclick = () => {
+    painelSync = !painelSync;
+    status();
+    if(painelSync){
+      $("#sync").scrollIntoView({ block:"nearest", behavior:"smooth" });
+      if(!$("#setup").classList.contains("open")) abrirSetup();
+    } else {
+      $("#setup").classList.remove("open");
+    }
+  };
   $("#toggle-setup").onclick = abrirSetup;
   $("#connect").onclick = conectar;
   $("#disconnect").onclick = () => {
@@ -202,10 +281,14 @@ function backup(){
   $("#backup").onclick = backup;
   $("#reset").onclick = async () => {
     if(!await confirmar("Isso desmarca todos os itens do checklist. Roteiro, estadias e documentos não são afetados.")) return;
+    /* 25 marcações e a autoria de cada uma. Guarda o estado anterior inteiro
+       antes de apagar, para que "Desfazer" devolva exatamente o que havia. */
+    const antes = JSON.parse(JSON.stringify(store.dados.items || {}));
     const t = Date.now(), zerado = {};
     for(const id in store.dados.items) zerado[id] = { v:false, t, w: store.cfg.name || "" };
     await store.gravarLote("items", zerado);
-    toast("Checklist zerado");
+    toast("Checklist zerado", { label:"Desfazer",
+      onClick: () => store.gravarLote("items", antes) });
   };
 
   store.aoMudar(desenhar);
@@ -222,7 +305,14 @@ function backup(){
   if(!r.ok && r.motivo === "config") $("#aviso").hidden = false;
   desenhar();
 
-  window.addEventListener("online",  async () => { status(); await store.religar(); status(); });
+  window.addEventListener("online",  async () => {
+    const antes = store.totalPendentes();
+    status();
+    await store.religar();
+    const restam = store.totalPendentes();
+    if(antes && antes > restam) toast(`${antes - restam} alteraç${antes - restam > 1 ? "ões enviadas" : "ão enviada"}`);
+    status();
+  });
   window.addEventListener("offline", status);
 
   /* instalar na tela inicial */

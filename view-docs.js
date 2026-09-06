@@ -1,5 +1,5 @@
-import { dados, docsLocais, gravar, gravarLocal, cfg, estaConectado } from "./store.js";
-import { esc, nl, uid, agora, modal, campo, confirmar, toast,
+import { dados, docsLocais, gravar, gravarLocal, pendente, cfg, presentes, estaConectado } from "./store.js";
+import { esc, nl, uid, agora, modal, campo, confirmar, toast, autoria,
          comprimirImagem, lerArquivo, pesoDataURL, kb, dataBR } from "./util.js";
 
 /* docs sincronizados: dados.docs/{id}
@@ -8,6 +8,14 @@ import { esc, nl, uid, agora, modal, campo, confirmar, toast,
 
 const TIPOS = ["Passaporte","RG / CNH","Passagem aérea","Seguro viagem","Reserva","Vacinação","Outro"];
 const LIMITE = 1200 * 1024;
+
+/* Quem está do outro lado do par. O app é de duas pessoas: nenhum dos dois
+   é "o usuário" e o outro um terceiro descrito na terceira pessoa. */
+function outroNome(padrao = "o outro celular"){
+  const eu = (cfg.name || "").trim().toLowerCase();
+  const outro = (presentes || []).find(n => (n || "").trim().toLowerCase() !== eu);
+  return outro || padrao;
+}
 
 function todos(){
   const s = Object.entries(dados.docs).map(([id, d]) => ({ id, ...d, local:false }));
@@ -18,11 +26,11 @@ function todos(){
 
 function form(d){
   return `
-    ${campo("x-tit", "Título", "text", d?.titulo || "", 'maxlength="60" placeholder="Passaporte do Pedro"')}
+    ${campo("x-tit", "Título", "text", d?.titulo || "", 'maxlength="60" placeholder="Passaporte, voucher, apólice…"')}
     <label for="x-tipo">Tipo</label>
     <select id="x-tipo">${TIPOS.map(t =>
       `<option ${d?.tipo===t?"selected":""}>${esc(t)}</option>`).join("")}</select>
-    ${campo("x-dono", "De quem", "text", d?.dono || "", 'maxlength="30" placeholder="Pedro"')}
+    ${campo("x-dono", "De quem", "text", d?.dono || "", `maxlength="30" placeholder="${cfg.name || "quem é o dono"}"`)}
     ${campo("x-num", "Número / código", "text", d?.num || "", 'maxlength="40"')}
     ${campo("x-val", "Validade (opcional)", "date", d?.validade || "")}
     ${campo("x-nota", "Observações", "textarea", d?.nota || "", 'maxlength="400"')}
@@ -31,7 +39,7 @@ function form(d){
     ${d?.arq ? `<p class="conf">Já tem arquivo anexado: ${esc(d.arq.nome || "arquivo")} · ${kb(pesoDataURL(d.arq.d))}. Escolher outro substitui.</p>` : ""}
     <div class="onde">
       <label class="radio"><input type="radio" name="x-onde" value="local" ${d?.local !== false ? "checked":""}>
-        <span><b>Só neste aparelho</b><small>Não sobe para a nuvem. Mais seguro para passaporte e RG, mas sua esposa não vê.</small></span></label>
+        <span><b>Só neste aparelho</b><small>Não sobe para a nuvem. Mais seguro para passaporte e RG, mas ${outroNome("o outro celular")} não vê.</small></span></label>
       <label class="radio"><input type="radio" name="x-onde" value="nuvem" ${d?.local === false ? "checked":""}>
         <span><b>Sincronizar com o outro celular</b><small>Fica visível para quem tiver o código do casal. Bom para passagens e vouchers.</small></span></label>
     </div>`;
@@ -111,9 +119,11 @@ function editar(doc){
     },
     extra: { label:"Excluir", onClick: async () => {
       if(!await confirmar(`Excluir "${doc.titulo}"?`)) return;
+      const antes = doc.local ? docsLocais[doc.id] : dados.docs[doc.id];
       if(doc.local) await gravarLocal(doc.id, null);
       else await gravar("docs", doc.id, null);
-      toast("Documento excluído");
+      toast("Documento excluído", { label:"Desfazer", onClick: () =>
+        doc.local ? gravarLocal(doc.id, antes) : gravar("docs", doc.id, antes) });
     }}
   });
 }
@@ -177,6 +187,8 @@ export function render(el){
           ${venc ? `<span class="when">válido até ${esc(venc)}</span>` : ""}
           ${doc.nota ? `<p class="nota">${nl(doc.nota)}</p>` : ""}
           <span class="tag ${doc.local ? "opt" : ""}">${doc.local ? "só neste aparelho" : "sincronizado"}</span>
+          ${autoria(doc, cfg.name)}
+          ${!doc.local && pendente("docs", doc.id) ? `<span class="tag pend">não enviado</span>` : ""}
         </div>
         <button class="mini" aria-label="Editar">✎</button>
       </div>`;

@@ -5,8 +5,12 @@
   --ambar:#F59A16;       /* âmbar */
   --creme:#FDF7C6;       /* creme */
   --brasa:#B23A1C;       /* fundo profundo do cabeçalho */
-  --brasa-deep:var(--av-txt);  /* blocos escuros */
+  --brasa-deep:#5C1D0C;  /* blocos escuros — próprio valor, não mais um alias de --av-txt */
   --oliva:#7A8C3B;       /* confirmações */
+  /* Pares legíveis: --ambar e --oliva são cores de exibição (sobre fundo escuro).
+     Sobre papel, texto usa estes — 5,2:1 e 5,4:1 contra --carta-2. */
+  --ambar-txt:#8A5A10;
+  --oliva-txt:#5A6A28;
   --blu:var(--brasa);        /* compat */
   --blu-deep:var(--brasa-deep);
   --oro:var(--ambar);
@@ -35,6 +39,8 @@ html[data-tema="escuro"]{
   --done-linea:#414A22; --done-bg:#221C10;
   --tag-bg:#3F2C11; --tag-txt:#EDC673; --tag-opt-bg:#332619; --sel-bg:#35220F;
   --sombra:rgba(0,0,0,.5);
+  /* no escuro os tons de exibição já são legíveis sobre papel */
+  --ambar-txt:var(--ambar); --oliva-txt:#B6C877;
   color-scheme:dark;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -81,7 +87,7 @@ h1 em{font-style:italic;color:var(--oro)}
   text-decoration:underline;cursor:pointer;padding:8px 2px;min-height:40px}
 .setup{margin-top:12px;padding-top:13px;border-top:1px solid var(--linea);display:none}
 .setup.open{display:block}
-.who{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--verde);
+.who{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--oliva-txt);
   margin:9px 0 0;letter-spacing:.04em}
 .hint{font-size:12.5px;color:var(--grigio);line-height:1.45;margin:12px 0 0}
 
@@ -110,10 +116,40 @@ textarea{min-height:82px;resize:vertical}
   border-radius:var(--r);padding:14px 15px;font-size:13px;line-height:1.55}
 .aviso-doc b{color:var(--doc-forte)}
 
+/* ══ barra fixa: resumo recolhido + abas ══
+   O cabeçalho inteiro custa 490px antes do primeiro item. Ao rolar, ele vira
+   esta faixa de ~50px que continua mostrando destino, contagem e progresso. */
+.barra{position:sticky;top:0;z-index:20;background:var(--carta);padding:18px 0 0}
+/* A troca de altura acontece de uma vez: animar altura é animar layout, e a
+   faixa aparece atrelada ao scroll, onde meio segundo de altura só atrasa.
+   O que anima é o que o compositor resolve sozinho — opacidade e translado. */
+.faixa{display:flex;align-items:center;gap:12px;overflow:hidden;
+  margin:0 14px;padding:0 15px;border-radius:var(--r) var(--r) 0 0;
+  background:linear-gradient(150deg,var(--fogo) 0%,var(--brasa) 100%);color:#fff;
+  height:0;opacity:0;transform:translateY(-6px);
+  transition:opacity .18s linear,transform .18s cubic-bezier(.4,0,.2,1)}
+.barra.recolhida .faixa{height:48px;padding:11px 15px;opacity:1;transform:none}
+.faixa-txt{flex:1;min-width:0;display:flex;align-items:baseline;gap:9px}
+.faixa-txt b{font-family:"Bodoni Moda",Didot,serif;font-weight:500;font-size:17px;
+  letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.faixa-txt span{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.06em;
+  color:var(--creme-suave);white-space:nowrap;flex:0 0 auto}
+.faixa-txt i{font-style:normal;font-weight:500;color:var(--oro)}
+.faixa-txt em{font-style:normal;text-transform:uppercase;font-size:10px}
+.faixa-bar{flex:0 0 54px;height:4px;border-radius:99px;background:rgba(255,255,255,.22);overflow:hidden}
+.faixa-bar i{display:block;height:100%;background:var(--oro);border-radius:99px;
+  transform-origin:left center;transform:scaleX(0);
+  transition:transform .45s cubic-bezier(.4,0,.2,1)}
+@media (prefers-reduced-motion:reduce){
+  .faixa{transition:none}
+  .faixa-bar i,.bar i{transition:none}
+}
+
 /* ══ abas ══ */
-.tabs{display:flex;gap:6px;margin:18px 14px 0;background:var(--carta-2);
-  border:1px solid var(--linea);border-radius:var(--r);padding:5px;
-  position:sticky;top:0;z-index:20}
+.tabs{display:flex;gap:6px;margin:0 14px;background:var(--carta-2);
+  border:1px solid var(--linea);border-radius:var(--r);padding:5px}
+.barra.recolhida .tabs{border-radius:0 0 var(--r) var(--r);border-top-color:transparent;
+  box-shadow:0 6px 14px -6px var(--sombra)}
 .tab{flex:1;min-width:0;background:none;border:0;border-radius:10px;cursor:pointer;
   padding:9px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;
   font:inherit;font-size:11px;color:var(--grigio);position:relative;min-height:56px}
@@ -185,12 +221,32 @@ main{padding:16px 14px 0}
 .item.on .txt p{color:var(--grigio);text-decoration:line-through;text-decoration-color:var(--risco)}
 .item.on .txt small{opacity:.55}
 .by{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:10px;
-  letter-spacing:.06em;color:var(--verde);margin-top:5px}
+  letter-spacing:.06em;color:var(--oliva-txt);margin-top:5px}
 .tag{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.07em;
   text-transform:uppercase;padding:2px 7px;border-radius:5px;background:var(--tag-bg);color:var(--tag-txt);
   margin-top:6px;margin-right:5px}
 .tag.opt{background:var(--tag-opt-bg);color:var(--grigio)}
-.tag.hot{background:var(--av-bg);color:var(--terra)}
+/* Registro aplicado aqui mas ainda não confirmado pelo servidor. O ponto
+   pisca devagar: precisa ser notado sem virar alarme. */
+.tag.pend{background:var(--av-bg);color:var(--av-txt);
+  display:inline-flex;align-items:center;gap:5px}
+.tag.pend::before{content:"";width:5px;height:5px;border-radius:99px;
+  background:currentColor;animation:pulsa 1.8s ease-in-out infinite}
+@keyframes pulsa{0%,100%{opacity:1}50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){ .tag.pend::before{animation:none} }
+
+/* histórico de pagamentos de um item do orçamento */
+.pagamentos{margin-top:16px;padding-top:13px;border-top:1px solid var(--linea)}
+.pag{display:flex;align-items:center;gap:10px;padding:8px 0;
+  border-bottom:1px solid var(--linea)}
+.pag:last-child{border-bottom:0}
+.pag b{font-family:"IBM Plex Mono",monospace;font-size:13px;flex:0 0 auto}
+.pag span{flex:1;min-width:0;font-size:12px;color:var(--grigio);
+  font-family:"IBM Plex Mono",monospace;letter-spacing:.04em}
+.pag-x{flex:0 0 auto;background:none;border:1px solid var(--linea);border-radius:8px;
+  width:32px;height:32px;color:var(--grigio);cursor:pointer;font-size:13px;line-height:1}
+.pag-x:hover{border-color:var(--terra);color:var(--terra)}
+.tag.hot{background:var(--av-bg);color:var(--av-txt)}
 
 /* ══ roteiro ══ */
 .dia-head{display:flex;gap:13px;align-items:flex-start}
@@ -204,7 +260,7 @@ main{padding:16px 14px 0}
 .paradas{margin-top:12px}
 .parada{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--linea);
   cursor:pointer;min-height:44px;align-items:flex-start}
-.hora{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--oro);
+.hora{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ambar-txt);
   flex:0 0 44px;padding-top:2px;font-weight:500}
 .parada-txt{flex:1;min-width:0}
 .parada-txt b{display:block;font-size:14.5px;font-weight:500}
@@ -220,7 +276,7 @@ main{padding:16px 14px 0}
 .datas b{font-family:"IBM Plex Mono",monospace;font-size:13.5px;color:var(--blu)}
 .datas .seta{color:var(--grigio);align-self:flex-end;padding-bottom:2px}
 .datas .nts{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:11px;
-  color:var(--verde);align-self:center}
+  color:var(--oliva-txt);align-self:center}
 .end{margin:12px 0 0;font-size:14px;line-height:1.5}
 .linhas{margin-top:10px}
 .linha{display:flex;justify-content:space-between;gap:12px;padding:7px 0;
@@ -277,11 +333,21 @@ main{padding:16px 14px 0}
 }
 
 /* ══ toast ══ */
-#toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);
+#toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));
+  transform:translate(-50%,20px);
   background:var(--blu-deep);color:#fff;font-size:13.5px;padding:12px 18px;
   border-radius:99px;z-index:200;opacity:0;pointer-events:none;transition:.25s;
   max-width:90vw;text-align:center;box-shadow:0 6px 22px var(--sombra)}
 #toast.show{opacity:1;transform:translate(-50%,0)}
+/* Com ação, o aviso deixa de ser passivo: precisa receber o toque. */
+#toast.com-acao{display:flex;align-items:center;gap:14px;text-align:left;
+  padding:8px 8px 8px 18px}
+#toast.show.com-acao{pointer-events:auto}
+.toast-acao{flex:0 0 auto;font:inherit;font-family:"IBM Plex Mono",monospace;
+  font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.26);
+  color:var(--creme);border-radius:99px;padding:9px 15px;min-height:38px;cursor:pointer}
+.toast-acao:hover{background:rgba(255,255,255,.26)}
 
 /* ══ rodapé ══ */
 .facts{margin:26px 14px 0;background:var(--blu-deep);border-radius:var(--r);padding:20px 18px;color:#fff}
@@ -291,7 +357,7 @@ main{padding:16px 14px 0}
   border-top:1px solid rgba(255,255,255,.12)}
 .fact:first-of-type{border-top:0}
 .fact span{font-size:13.5px;color:var(--creme-suave);line-height:1.4}
-.fact b{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--oro);
+.fact b{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--creme);
   white-space:nowrap;font-weight:500}
 footer{padding:22px 14px 30px;text-align:center}
 .rodape-btns{display:flex;gap:9px;justify-content:center;flex-wrap:wrap}
@@ -319,12 +385,24 @@ footer{padding:22px 14px 30px;text-align:center}
 .chip .n{font-family:"IBM Plex Mono",monospace;font-size:11px;opacity:.7;margin-left:5px}
 
 
-/* ══ alternador de tema ══ */
+/* ══ ações do cabeçalho: estado da sincronia + tema ══ */
 .stub{position:relative}
-#tema{position:absolute;top:calc(20px + env(safe-area-inset-top));right:16px;
+.stub-acoes{position:absolute;top:calc(20px + env(safe-area-inset-top));right:16px;
+  display:flex;align-items:center;gap:8px;z-index:1}
+.chip-sync{display:flex;align-items:center;gap:7px;height:42px;padding:0 14px;
   background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);
+  border-radius:99px;cursor:pointer;color:var(--creme);
+  font:inherit;font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+  letter-spacing:.08em;text-transform:uppercase;max-width:46vw}
+.chip-sync:hover{background:rgba(255,255,255,.22)}
+.chip-sync span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip-sync .dot{box-shadow:0 0 0 3px rgba(255,255,255,.14)}
+.chip-sync .dot.on{background:#C8DA6E;box-shadow:0 0 0 3px rgba(200,218,110,.28)}
+.chip-sync .dot.wait{background:var(--ambar)}
+.chip-sync .dot.err{background:#FFC4AE}
+#tema{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);
   border-radius:99px;width:42px;height:42px;cursor:pointer;color:var(--creme);
-  display:flex;align-items:center;justify-content:center;padding:0}
+  display:flex;align-items:center;justify-content:center;padding:0;flex:0 0 auto}
 #tema:hover{background:rgba(255,255,255,.22)}
 #tema svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;
   stroke-linecap:round;stroke-linejoin:round}
@@ -407,6 +485,6 @@ html[data-tema="escuro"] .parada-cidade{color:var(--ambar)}
 .orc-val b{display:block;font-family:"IBM Plex Mono",monospace;font-size:13.5px;color:var(--inchiostro)}
 .orc-val i{display:block;font-style:normal;font-family:"IBM Plex Mono",monospace;
   font-size:10px;color:var(--grigio);margin-top:3px;letter-spacing:.03em}
-.orc-val i.ok{color:var(--oliva);font-weight:500}
+.orc-val i.ok{color:var(--oliva-txt);font-weight:500}
 .orc-item.quitado .orc-txt b{color:var(--grigio)}
 .orc-item.quitado .orc-val b{color:var(--oliva)}

@@ -21,6 +21,62 @@ export let motivoOffline = "";
 
 let FB = null, db = null, uid = null, unsubs = [], ouvintes = [], cacheCarregado = false;
 
+/* ═══════ fila de pendências ═══════
+   Escrita otimista sem fila mente: o app diz "salvo" e o registro pode nunca
+   ter saído daqui. Toda gravação que não chega ao Firebase entra nesta fila,
+   sobrevive ao fechamento do app (IndexedDB) e é reenviada quando a rede volta.
+   `valor === null` é uma exclusão pendente — precisa ser reenviada também. */
+let outbox = {};
+const chaveOut = (ramo, id) => ramo + "/" + id;
+const salvarOutbox = () => idbSet("outbox", outbox);
+
+function enfileirar(ramo, id, valor, sub){
+  /* Sem código do casal não existe destino: o app está em modo só-neste-
+     aparelho por escolha, e nada está "esperando para subir". Ao conectar,
+     `conectar()` sobe o que for mais recente de qualquer maneira. */
+  if(!cfg.code) return;
+  outbox[chaveOut(ramo, sub ? id + "/" + sub : id)] = { ramo, id, valor, sub };
+  salvarOutbox();
+}
+function desenfileirar(ramo, id, sub){
+  const k = chaveOut(ramo, sub ? id + "/" + sub : id);
+  if(!(k in outbox)) return false;
+  delete outbox[k]; salvarOutbox(); return true;
+}
+/* O snapshot do Firebase substitui o ramo inteiro. Sem reaplicar o que ainda
+   não subiu, a chegada de um snapshot apagaria a edição feita offline. */
+function reaplicarPendentes(ramo){
+  for(const k in outbox){
+    const it = outbox[k];
+    if(it.ramo !== ramo) continue;
+    if(it.sub){
+      /* pendência de campo: o registro pode ter chegado do outro celular */
+      if(dados[ramo][it.id]) escreverEm(dados[ramo][it.id], it.sub, it.valor);
+      continue;
+    }
+    if(it.valor === null) delete dados[ramo][it.id];
+    else dados[ramo][it.id] = it.valor;
+  }
+}
+
+/* escreve "a/b/c" dentro de um objeto, criando os níveis que faltarem */
+function escreverEm(alvo, sub, valor){
+  const partes = sub.split("/");
+  let no = alvo;
+  for(let k = 0; k < partes.length - 1; k++){
+    if(typeof no[partes[k]] !== "object" || no[partes[k]] === null) no[partes[k]] = {};
+    no = no[partes[k]];
+  }
+  const ultima = partes[partes.length - 1];
+  if(valor === null) delete no[ultima]; else no[ultima] = valor;
+}
+
+export const pendente = (ramo, id) => {
+  const base = chaveOut(ramo, id);
+  return base in outbox || Object.keys(outbox).some(k => k.startsWith(base + "/"));
+};
+export const totalPendentes = () => Object.keys(outbox).length;
+
 export const aoMudar = fn => { ouvintes.push(fn); };
 const avisar = () => ouvintes.forEach(f => { try{ f(); }catch(e){ console.error(e); } });
 
@@ -63,6 +119,7 @@ export async function carregarLocal(){
   const cache = await idbGet("dados");
   if(cache) for(const k in dados) if(cache[k]) dados[k] = cache[k];
   docsLocais = await idbGet("docsLocais") || {};
+  outbox = await idbGet("outbox") || {};
   avisar();
 }
 
@@ -115,6 +172,7 @@ export function ouvir(){
   RAMOS.forEach(ramo => {
     const u = FB.onValue(FB.ref(db, caminho(ramo)), snap => {
       dados[ramo] = snap.val() || {};
+      reaplicarPendentes(ramo);
       online = true;
       salvarCache();
       avisar();
@@ -148,22 +206,88 @@ export async function gravar(ramo, id, valor){
   if(valor === null) delete dados[ramo][id];
   else dados[ramo][id] = valor;
   salvarCache();
+
+  if(!db || !cfg.code || !FB){
+    enfileirar(ramo, id, valor);
+    avisar();
+    return { ok:false, local:true };
+  }
   avisar();
-  if(!db || !cfg.code || !FB) return { ok:false, local:true };
   try{
     if(valor === null) await FB.remove(FB.ref(db, caminho(ramo, id)));
     else await FB.set(FB.ref(db, caminho(ramo, id)), valor);
+    if(desenfileirar(ramo, id)) avisar();
     return { ok:true };
-  }catch(e){ console.error(e); return { ok:false, erro:e }; }
+  }catch(e){
+    console.error(e);
+    enfileirar(ramo, id, valor);
+    avisar();
+    return { ok:false, erro:e };
+  }
 }
 
 export async function gravarLote(ramo, obj){
   Object.assign(dados[ramo], obj);
   salvarCache();
+
+  const enfileirarTudo = () => { for(const id in obj) enfileirar(ramo, id, obj[id]); };
+  if(!db || !cfg.code || !FB){
+    enfileirarTudo(); avisar();
+    return { ok:false, local:true };
+  }
   avisar();
-  if(!db || !cfg.code || !FB) return { ok:false, local:true };
-  try{ await FB.update(FB.ref(db, caminho(ramo)), obj); return { ok:true }; }
-  catch(e){ console.error(e); return { ok:false, erro:e }; }
+  try{
+    await FB.update(FB.ref(db, caminho(ramo)), obj);
+    let mudou = false;
+    for(const id in obj) if(desenfileirar(ramo, id)) mudou = true;
+    if(mudou) avisar();
+    return { ok:true };
+  }catch(e){
+    console.error(e); enfileirarTudo(); avisar();
+    return { ok:false, erro:e };
+  }
+}
+
+/* Grava um campo isolado do registro (ex.: um pagamento dentro de um item).
+   Escrever o registro inteiro faz o último a salvar apagar o que o outro
+   acabou de somar; escrever só o campo deixa os dois lados conviverem. */
+export async function gravarSub(ramo, id, sub, valor){
+  if(!dados[ramo][id]) return { ok:false, motivo:"sem registro" };
+  escreverEm(dados[ramo][id], sub, valor);
+  salvarCache();
+
+  if(!db || !cfg.code || !FB){
+    enfileirar(ramo, id, valor, sub); avisar();
+    return { ok:false, local:true };
+  }
+  avisar();
+  const cam = caminho(ramo, id) + "/" + sub;
+  try{
+    if(valor === null) await FB.remove(FB.ref(db, cam));
+    else await FB.set(FB.ref(db, cam), valor);
+    if(desenfileirar(ramo, id, sub)) avisar();
+    return { ok:true };
+  }catch(e){
+    console.error(e); enfileirar(ramo, id, valor, sub); avisar();
+    return { ok:false, erro:e };
+  }
+}
+
+/* ═══════ reenvio ═══════ */
+export async function enviarPendentes(){
+  if(!db || !cfg.code || !FB) return { ok:false, restam: totalPendentes() };
+  let enviados = 0;
+  for(const it of Object.values(outbox)){
+    const cam = caminho(it.ramo, it.id) + (it.sub ? "/" + it.sub : "");
+    try{
+      if(it.valor === null) await FB.remove(FB.ref(db, cam));
+      else await FB.set(FB.ref(db, cam), it.valor);
+      desenfileirar(it.ramo, it.id, it.sub);
+      enviados++;
+    }catch(e){ console.error(e); }
+  }
+  if(enviados) avisar();
+  return { ok:true, enviados, restam: totalPendentes() };
 }
 
 /* documentos guardados só no aparelho */
@@ -195,12 +319,14 @@ export async function conectar(code, name){
       if(Object.keys(envio).length) await FB.update(FB.ref(db, caminho(ramo)), envio);
     }
   }catch(e){ console.error(e); }
+  await enviarPendentes();
   ouvir();
   return { ok:true };
 }
 
 export function desconectar(){
   parar();
+  outbox = {}; salvarOutbox();
   if(db && cfg.code && uid && FB) FB.set(FB.ref(db, `trips/${cfg.code}/present/${uid}`), null).catch(()=>{});
   cfg = { code:"", name: cfg.name };
   LS.set("roma2026:cfg", cfg);
@@ -213,7 +339,10 @@ export function desconectar(){
 export async function religar(){
   if(!configurado) return;
   if(!db) await iniciar();
-  else if(cfg.code && !unsubs.length) ouvir();
+  /* Primeiro esvazia a fila, depois escuta: se os ouvintes voltassem antes,
+     o snapshot remoto chegaria por cima do que ainda não foi enviado. */
+  await enviarPendentes();
+  if(cfg.code && !unsubs.length) ouvir();
 }
 
 export const estaConectado = () => !!(db && cfg.code);

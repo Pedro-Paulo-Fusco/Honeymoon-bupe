@@ -33,11 +33,17 @@
 <body>
 <div class="wrap">
 
-  <header class="stub">
-    <button id="tema" aria-label="Alternar modo claro e escuro" title="Modo claro / escuro">
-      <svg class="sol" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
-      <svg class="lua" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z"/></svg>
-    </button>
+  <header class="stub" id="stub">
+    <div class="stub-acoes">
+      <button class="chip-sync" id="sync-chip" aria-expanded="false"
+              aria-controls="sync" aria-label="Estado da sincronização">
+        <span class="dot" id="dot"></span><span id="chip-lbl">Carregando…</span>
+      </button>
+      <button id="tema" aria-label="Alternar modo claro e escuro" title="Modo claro / escuro">
+        <svg class="sol" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="lua" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.8 6.8 0 0 0 10.5 10.5z"/></svg>
+      </button>
+    </div>
     <p class="eyebrow">Lua de mel · Itália</p>
     <h1 id="destino"></h1>
     <p class="route" id="route"></p>
@@ -52,16 +58,16 @@
     O app funciona, mas guarda tudo só neste aparelho.
   </div>
 
-  <section class="sync">
+  <section class="sync" id="sync" hidden>
     <div class="sync-top">
-      <span class="dot" id="dot"></span>
+      <span class="dot" id="dot2"></span>
       <p id="sync-msg">Carregando…</p>
       <button class="lnk" id="toggle-setup">Conectar</button>
     </div>
     <p class="who" id="who"></p>
     <div class="setup" id="setup">
       <label for="name">Quem está usando este aparelho</label>
-      <input id="name" type="text" placeholder="Pedro" autocomplete="off" maxlength="14">
+      <input id="name" type="text" placeholder="Seu primeiro nome" autocomplete="off" maxlength="14">
       <label for="code">Código do casal</label>
       <input id="code" type="text" placeholder="bupe-a3f9k2" autocomplete="off"
              maxlength="24" autocapitalize="none" spellcheck="false">
@@ -73,6 +79,16 @@
         Quem souber o código enxerga checklist, roteiro, estadias e os documentos marcados como sincronizados.</p>
     </div>
   </section>
+
+  <div class="barra" id="barra">
+
+  <div class="faixa" id="mini" aria-hidden="true">
+    <div class="faixa-txt">
+      <b id="mini-destino"></b>
+      <span><i id="mini-dias">—</i> <em id="mini-lbl"></em></span>
+    </div>
+    <div class="faixa-bar"><i id="mini-fill"></i></div>
+  </div>
 
   <nav class="tabs" role="tablist">
     <button class="tab ativa" data-aba="checklist" role="tab" aria-selected="true">
@@ -97,9 +113,11 @@
     </button>
   </nav>
 
+  </div>
+
   <main id="view"></main>
 
-  <section class="facts">
+  <section class="facts" id="facts">
     <h3>Números que não podem falhar</h3>
     <div id="facts-list"></div>
   </section>

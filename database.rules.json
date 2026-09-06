@@ -216,6 +216,22 @@
             "w": {
               ".validate": "newData.isString() && newData.val().length <= 20"
             },
+            "pagamentos": {
+              "$pid": {
+                "v": {
+                  ".validate": "newData.isNumber()"
+                },
+                "t": {
+                  ".validate": "newData.isNumber()"
+                },
+                "w": {
+                  ".validate": "newData.isString() && newData.val().length <= 20"
+                },
+                "$outro": {
+                  ".validate": false
+                }
+              }
+            },
             "$outro": {
               ".validate": false
             }

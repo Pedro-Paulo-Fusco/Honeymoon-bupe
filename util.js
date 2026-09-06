@@ -79,9 +79,9 @@ export function lerArquivo(file){
 }
 
 /* ═══════ modal ═══════ */
-let modalAtual = null;
+let modalAtual = null, aoFechar = null;
 
-export function modal({ titulo, corpo, salvar = "Salvar", onSalvar, extra }){
+export function modal({ titulo, corpo, salvar = "Salvar", onSalvar, extra, onFechar }){
   fecharModal();
   const back = document.createElement("div");
   back.className = "backdrop";
@@ -102,6 +102,7 @@ export function modal({ titulo, corpo, salvar = "Salvar", onSalvar, extra }){
   document.body.style.overflow = "hidden";
   modalAtual = back;
 
+  aoFechar = onFechar || null;
   const fechar = () => fecharModal();
   back.querySelector(".x").onclick = fechar;
   back.querySelector("[data-cancel]").onclick = fechar;
@@ -128,35 +129,62 @@ export function modal({ titulo, corpo, salvar = "Salvar", onSalvar, extra }){
 }
 function escKey(e){ if(e.key === "Escape") fecharModal(); }
 export function fecharModal(){
+  /* Roda antes de limpar: Escape, clique no fundo e o X passam por aqui,
+     então quem espera uma resposta do modal sempre recebe uma. */
+  const cb = aoFechar; aoFechar = null;
   if(modalAtual){ modalAtual.remove(); modalAtual = null; }
   document.body.style.overflow = "";
   document.removeEventListener("keydown", escKey);
+  if(cb) cb();
 }
 
 /* ═══════ avisos ═══════ */
 let toastT = null;
-export function toast(msg){
+export function toast(msg, acao){
   let t = $("#toast");
   if(!t){
     t = document.createElement("div"); t.id = "toast"; document.body.appendChild(t);
   }
-  t.textContent = msg; t.classList.add("show");
-  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 2800);
+  t.textContent = msg;
+  t.classList.toggle("com-acao", !!acao);
+  /* Um aviso com ação precisa de tempo para ser lido e tocado. */
+  let vida = 2800;
+  if(acao){
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "toast-acao"; b.textContent = acao.label;
+    b.onclick = async () => {
+      t.classList.remove("show"); clearTimeout(toastT);
+      try{ await acao.onClick(); }catch(e){ console.error(e); }
+    };
+    t.appendChild(b);
+    vida = 7000;
+  }
+  t.classList.add("show");
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), vida);
 }
 export const alerta = msg => toast(msg);
 
 export function confirmar(msg){
   return new Promise(ok => {
+    let decidido = false;
+    const responder = v => { if(!decidido){ decidido = true; ok(v); } };
     modal({
       titulo: "Confirmar",
       corpo: `<p class="conf">${esc(msg)}</p>`,
       salvar: "Sim, continuar",
-      onSalvar: () => { ok(true); }
+      onSalvar: () => { responder(true); },
+      onFechar: () => responder(false)
     });
-    const back = modalAtual;
-    back.querySelector("[data-cancel]").addEventListener("click", () => ok(false));
-    back.querySelector(".x").addEventListener("click", () => ok(false));
   });
+}
+
+/* Autoria: o app é de duas pessoas. Mostra o nome só quando o registro é
+   do outro celular — o que você mesmo escreveu não precisa de etiqueta. */
+export function autoria(rec, eu){
+  const w = ((rec && rec.w) || "").trim();
+  if(!w) return "";
+  if(eu && w.toLowerCase() === String(eu).trim().toLowerCase()) return "";
+  return `<span class="by">${esc(w)}</span>`;
 }
 
 /* campo de formulário */

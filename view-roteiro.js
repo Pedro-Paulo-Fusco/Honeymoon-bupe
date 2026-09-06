@@ -1,5 +1,5 @@
-import { dados, gravar, cfg, LS } from "./store.js";
-import { esc, nl, uid, agora, modal, campo, confirmar, toast, dataBR, diaSemana } from "./util.js";
+import { dados, gravar, pendente, cfg, LS } from "./store.js";
+import { esc, nl, uid, agora, modal, campo, confirmar, toast, dataBR, diaSemana, autoria } from "./util.js";
 import { abrirImportador } from "./importador.js";
 
 /* roteiro/{id} = { dia, cidade, titulo, nota, t, paradas:{pid:{h,n,d,c}} }
@@ -94,7 +94,10 @@ function editarDia(d){
     },
     extra: { label:"Excluir dia", onClick: async () => {
       if(!await confirmar("Excluir este dia e todas as paradas dele?")) return;
-      await gravar("roteiro", d.id, null); toast("Dia excluído");
+      const antes = dados.roteiro[d.id];
+      await gravar("roteiro", d.id, null);
+      toast("Dia excluído", { label:"Desfazer",
+        onClick: () => gravar("roteiro", d.id, antes) });
     }}
   });
 }
@@ -260,6 +263,8 @@ export function render(el){
         <div class="dia-tit">
           <h2>${esc(d.titulo || cidades.join(" · ") || "Sem título")}</h2>
           <span class="when">${resumo}</span>
+          ${autoria(d, cfg.name)}
+          ${pendente("roteiro", d.id) ? `<span class="tag pend">não enviado</span>` : ""}
           ${cidades.length ? `<span class="rota">${cidades.map(c =>
             `<i class="cid${filtro === c ? " on" : ""}">${esc(c)}</i>`).join('<b>→</b>')}</span>` : ""}
         </div>

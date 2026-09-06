@@ -1,0 +1,7 @@
+# artefatos das ferramentas de design — não fazem parte do app
+.impeccable/
+
+# lixo de sistema
+Thumbs.db
+desktop.ini
+.DS_Store
