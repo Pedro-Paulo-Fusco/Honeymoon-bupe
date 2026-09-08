@@ -1,7 +1,8 @@
 # Roma 2026 — Bupe
 
-App de bolso da lua de mel, para os dois celulares. Cinco abas: **Checklist**, **Roteiro**,
-**Estadias**, **Documentos** e **Orçamento**. Tudo sincroniza pelo mesmo código e tudo abre offline.
+App de bolso da lua de mel, para os dois celulares. Seis abas: **Checklist**, **Roteiro**,
+**Estadias**, **Documentos**, **Orçamento** e **Lugares**. Tudo sincroniza pelo mesmo código e
+tudo abre offline.
 
 ---
 
@@ -24,13 +25,14 @@ já a exclui.
 Console → Realtime Database → aba **Regras** → apagar tudo, colar o conteúdo de
 `database.rules.json` → **Publicar**.
 
-As regras recusam qualquer campo que não esteja declarado nelas. A versão nova inclui
-`pagamentos` dentro de cada item do orçamento. **Sem republicar, todo pagamento é recusado
-com "permission denied"** e o orçamento para de funcionar.
+As regras recusam qualquer campo que não esteja declarado nelas, e qualquer ramo novo é
+recusado inteiro. A versão atual inclui `pagamentos` dentro de cada item do orçamento e o
+ramo `lugares`. **Sem republicar, os pagamentos e a aba Lugares são recusados com
+"permission denied".**
 
 ### 3. Forçar a atualização nos celulares
 
-O `sw.js` está em `bupe2026-v9`, então o service worker troca sozinho. Se algum celular
+O `sw.js` está em `bupe2026-v10`, então o service worker troca sozinho. Se algum celular
 insistir na versão antiga, feche o app completamente e reabra, ou recarregue com Ctrl+Shift+R
 no navegador.
 
@@ -79,6 +81,30 @@ Itens por categoria, com quantidade, valor em euro ou em real, e câmbio ajustá
 registrar pagamentos no mesmo item sem que um apague o do outro, e o histórico mostra quem
 pagou o quê. O campo antigo de total pago continua valendo como saldo inicial, então nada do
 que já estava preenchido se perde.
+
+### Lugares
+As indicações que vocês foram juntando — restaurantes, gelaterias, cafés, lojas — com tipo,
+cidade, horário, faixa de preço e o motivo pelo qual valem a pena.
+
+**Ela não abre numa lista alfabética.** Abre no que serve agora: o app lê a data de hoje, acha
+o dia correspondente no Roteiro e mostra primeiro os lugares da cidade onde vocês estão, sob o
+título "Hoje · Roma". O resto vem abaixo, na ordem em que a viagem passa por cada cidade. A
+pergunta que ela responde é a que se faz em pé na rua: sobrou uma hora aqui, o que presta perto?
+
+Cada lugar pode ser marcado como **já fomos**. O visitado não some: perde peso, desce para o
+fim do grupo, e guarda a data. No fim da viagem essa é a lista do que vocês realmente
+aproveitaram. O contador na aba mostra quantos ainda **faltam**.
+
+Dá para cadastrar um a um ou colar uma lista inteira. O importador aceita CSV com cabeçalho e
+também texto solto, do jeito que a indicação costuma chegar:
+
+```
+Pizzarium — pizzaria — al taglio, do Bonci, perto do Vaticano
+Fatamorgana — sorveteria — sabores estranhos que funcionam
+```
+
+Ele reconhece "pizzaria", "trattoria", "sorveteria", "caffè", "enoteca" e afins, e encaixa no
+tipo certo sozinho.
 
 ---
 
@@ -137,6 +163,7 @@ sincronizado e o que está só no aparelho. Vale rodar uma vez antes de viajar e
 | Itens fixos do checklist, números-chave, datas da viagem | `data.js` |
 | Cores, tipografia, espaçamentos | `styles.css` |
 | Comportamento de uma aba | `view-<aba>.js`, na raiz |
+| Tipos de lugar (restaurante, gelateria…) | `data.js`, em `LUGARES.tipos` |
 | Sincronização, fila de pendências, armazenamento | `store.js` |
 | Regras de validação do banco | `database.rules.json` (republicar no console depois) |
 
@@ -144,5 +171,5 @@ As datas mandam em `data.js`: noites, dias em solo e dias corridos são **contad
 `EMBARQUE` e `RETORNO`**, e não devem ser escritos à mão. São três medidas distintas da mesma
 viagem — 12 noites, 12 dias em solo, 13 dias corridos — e cada uma tem seu uso.
 
-**Sempre que editar qualquer arquivo, suba a versão em `sw.js`** (`bupe2026-v9` → `v10`).
+**Sempre que editar qualquer arquivo, suba a versão em `sw.js`** (`bupe2026-v10` → `v11`).
 Sem isso, os celulares que já abriram o app continuam servindo a versão antiga do cache.

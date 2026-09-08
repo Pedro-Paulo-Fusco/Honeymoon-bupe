@@ -12,7 +12,7 @@ export const LS = {
   set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
 };
 
-export const dados = { items:{}, extra:{}, roteiro:{}, estadias:{}, docs:{}, orcamento:{}, conf:{} };
+export const dados = { items:{}, extra:{}, roteiro:{}, estadias:{}, docs:{}, orcamento:{}, lugares:{}, conf:{} };
 export let docsLocais = {};
 export let cfg = LS.get("roma2026:cfg") || { code:"", name:"" };
 export let online = false;
@@ -163,7 +163,7 @@ export async function iniciar(){
   }
 }
 
-const RAMOS = ["items","extra","roteiro","estadias","docs","orcamento","conf"];
+const RAMOS = ["items","extra","roteiro","estadias","docs","orcamento","lugares","conf"];
 const caminho = (ramo, id) => `trips/${cfg.code}/${ramo}${id ? "/"+id : ""}`;
 
 export function ouvir(){

@@ -237,6 +237,40 @@
             }
           }
         },
+        "lugares": {
+          "$id": {
+            "n": {
+              ".validate": "newData.isString() && newData.val().length <= 80"
+            },
+            "tipo": {
+              ".validate": "newData.isString() && newData.val().length <= 40"
+            },
+            "cidade": {
+              ".validate": "newData.isString() && newData.val().length <= 40"
+            },
+            "hora": {
+              ".validate": "newData.isString() && newData.val().length <= 30"
+            },
+            "preco": {
+              ".validate": "newData.isString() && newData.val().length <= 16"
+            },
+            "nota": {
+              ".validate": "newData.isString() && newData.val().length <= 400"
+            },
+            "fui": {
+              ".validate": "newData.isNumber()"
+            },
+            "t": {
+              ".validate": "newData.isNumber()"
+            },
+            "w": {
+              ".validate": "newData.isString() && newData.val().length <= 20"
+            },
+            "$outro": {
+              ".validate": false
+            }
+          }
+        },
         "conf": {
           "$chave": {
             "v": {

@@ -6,13 +6,15 @@ import * as vRoteiro   from "./view-roteiro.js";
 import * as vEstadias  from "./view-estadias.js";
 import * as vDocs      from "./view-docs.js";
 import * as vOrcamento from "./view-orcamento.js";
+import * as vLugares   from "./view-lugares.js";
 
 const ABAS = {
   checklist: { titulo:"Checklist", view:vChecklist },
   roteiro:   { titulo:"Roteiro",   view:vRoteiro   },
   estadias:  { titulo:"Estadias",  view:vEstadias  },
   docs:      { titulo:"Documentos",view:vDocs      },
-  orcamento: { titulo:"Orçamento", view:vOrcamento }
+  orcamento: { titulo:"Orçamento", view:vOrcamento },
+  lugares:   { titulo:"Lugares",   view:vLugares   }
 };
 let abaAtual = store.LS.get("roma2026:aba") || "checklist";
 
@@ -184,11 +186,14 @@ function desenhar(){
   const nEst  = Object.keys(store.dados.estadias).length;
   const nDoc  = Object.keys(store.dados.docs).length + Object.keys(store.docsLocais).length;
   const nOrc  = Object.keys(store.dados.orcamento || {}).length;
+  /* lugares: conta o que ainda não foi visitado — é o que resta fazer */
+  const nLug  = Object.values(store.dados.lugares || {}).filter(l => !l.fui).length;
   const badge = (aba, n) => {
     const b = document.querySelector(`.tab[data-aba="${aba}"] .badge`);
     if(b){ b.textContent = n || ""; b.style.display = n ? "" : "none"; }
   };
-  badge("roteiro", nDias); badge("estadias", nEst); badge("docs", nDoc); badge("orcamento", nOrc);
+  badge("roteiro", nDias); badge("estadias", nEst); badge("docs", nDoc);
+  badge("orcamento", nOrc); badge("lugares", nLug);
   /* "Números que não podem falhar" é contexto do checklist, não do app inteiro */
   $("#facts").hidden = abaAtual !== "checklist";
 }

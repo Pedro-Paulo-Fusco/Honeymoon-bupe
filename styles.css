@@ -146,18 +146,29 @@ textarea{min-height:82px;resize:vertical}
 }
 
 /* ══ abas ══ */
-.tabs{display:flex;gap:6px;margin:0 14px;background:var(--carta-2);
+.tabs{display:flex;gap:4px;margin:0 14px;background:var(--carta-2);
   border:1px solid var(--linea);border-radius:var(--r);padding:5px}
 .barra.recolhida .tabs{border-radius:0 0 var(--r) var(--r);border-top-color:transparent;
   box-shadow:0 6px 14px -6px var(--sombra)}
-.tab{flex:1;min-width:0;background:none;border:0;border-radius:10px;cursor:pointer;
-  padding:9px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;
-  font:inherit;font-size:11px;color:var(--grigio);position:relative;min-height:56px}
+/* Seis abas não cabem com rótulo em 375px — "Orçamento" já truncava com cinco.
+   As inativas ficam só com o ícone e a ativa se abre para mostrar o nome, o que
+   dá alvos maiores do que antes, não menores. O rótulo continua no DOM para
+   leitor de tela: fica escondido visualmente, nunca com display:none. */
+.tab{flex:0 0 auto;width:44px;background:none;border:0;border-radius:10px;cursor:pointer;
+  padding:9px 4px;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:3px;
+  font:inherit;font-size:11px;color:var(--grigio);position:relative;min-height:52px}
+/* A troca é seca de propósito: animar a largura é animar layout, e o conteúdo
+   abaixo troca no mesmo instante — meio segundo de aba deslizando só
+   desencontraria os dois. */
+.tab.ativa{flex:1 1 auto;width:auto;flex-direction:row;gap:7px;padding:9px 12px}
+.tab:not(.ativa) span{position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
 .tab svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;
   stroke-linecap:round;stroke-linejoin:round}
 .tab span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .tab.ativa{background:var(--blu);color:#fff}
-.badge{position:absolute;top:4px;right:calc(50% - 26px);background:var(--oro);color:#4A2114;
+.badge{position:absolute;top:3px;right:3px;background:var(--oro);color:#4A2114;
   font-family:"IBM Plex Mono",monospace;font-style:normal;font-size:9.5px;font-weight:500;
   min-width:15px;height:15px;line-height:15px;border-radius:99px;padding:0 4px;display:none}
 
@@ -385,6 +396,26 @@ footer{padding:22px 14px 30px;text-align:center}
 .chip .n{font-family:"IBM Plex Mono",monospace;font-size:11px;opacity:.7;margin-left:5px}
 
 
+/* ══ lugares recomendados ══ */
+.lugar-grupo > .body{padding-top:2px}
+.lugar{margin-bottom:12px}
+.lugar-head{display:flex;gap:10px;align-items:flex-start}
+.lugar-txt{flex:1;min-width:0}
+.lugar-txt h2{margin:0 0 2px}
+/* Só o tipo ganha etiqueta. Horário e preço são leitura de apoio: virariam
+   ruído se disputassem o mesmo peso em todo cartão. */
+.lugar-meta{display:block;margin-top:6px;font-family:"IBM Plex Mono",monospace;
+  font-size:11.5px;letter-spacing:.04em;color:var(--grigio)}
+.lugar .nota{margin:10px 0 0}
+/* Visitado não some: perde peso e vai para o fim do grupo. No fim da viagem
+   esta vira a lista do que vocês realmente aproveitaram. */
+.lugar.visitado{background:var(--done-bg);border-color:var(--done-linea)}
+.lugar.visitado h2{color:var(--grigio)}
+.fomos{margin:10px 0 0;font-family:"IBM Plex Mono",monospace;font-size:11px;
+  letter-spacing:.05em;color:var(--oliva-txt)}
+.acao.on{border-color:var(--done-linea);color:var(--oliva-txt);background:var(--done-bg)}
+.lugar-btns{margin:4px 0 8px}
+
 /* ══ ações do cabeçalho: estado da sincronia + tema ══ */
 .stub{position:relative}
 .stub-acoes{position:absolute;top:calc(20px + env(safe-area-inset-top));right:16px;
@@ -449,10 +480,6 @@ html[data-tema="escuro"] .parada-cidade{color:var(--ambar)}
 .filtrado{margin:6px 0 0;font-size:12px;color:var(--grigio);font-style:italic}
 
 /* ══ orçamento ══ */
-.tabs{gap:4px}
-.tab{font-size:10.5px;padding:9px 2px 8px}
-.badge{right:calc(50% - 22px)}
-
 .orc-topo{background:var(--brasa-deep);border-radius:var(--r);padding:18px;color:#fff;margin-bottom:16px}
 .orc-total small{display:block;font-family:"IBM Plex Mono",monospace;font-size:10px;
   letter-spacing:.16em;text-transform:uppercase;color:var(--creme-suave);opacity:.8}

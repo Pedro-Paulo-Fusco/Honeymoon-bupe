@@ -37,6 +37,20 @@ export const ORCAMENTO = {
   ]
 };
 
+/* lugares recomendados: os tipos que aparecem no filtro e no cadastro.
+   Mexer aqui muda a aba inteira — a ordem daqui é a ordem de exibição. */
+export const LUGARES = {
+  tipos: [
+    "🍝 Restaurante",
+    "🍦 Gelateria",
+    "☕ Café / Bar",
+    "🥐 Padaria / Doceria",
+    "🍷 Enoteca",
+    "🛍️ Loja",
+    "📍 Outro"
+  ]
+};
+
 export const NUMEROS = [
   ["Passaporte válido até, no mínimo", "13/01/2027"],
   ["Passaporte emitido a partir de", "02/10/2016"],
