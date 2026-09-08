@@ -32,13 +32,34 @@ const todasCidades = () => {
   return [...s].sort((a,b) => a.localeCompare(b));
 };
 
+/* ── onde a viagem está hoje ──
+   O app já contava os dias no cabeçalho e nunca comparava nada com a data
+   real aqui dentro. Durante a viagem esta é a pergunta da aba: em que ponto
+   disto tudo eu estou? */
+const hojeISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+};
+const ehHoje    = d => !!d.dia && d.dia === hojeISO();
+const ehPassado = d => !!d.dia && d.dia <  hojeISO();
+const temHoje   = () => ordenados().some(ehHoje);
+
+/* primeiro dia ainda por vir — vira "a seguir" quando hoje não é dia de roteiro */
+function proximoDia(){
+  if(temHoje()) return null;
+  const h = hojeISO();
+  return ordenados().find(d => (d.dia || "") > h) || null;
+}
+
 /* ── estado da tela (só neste aparelho) ── */
 let filtro  = LS.get("bupe:filtroCidade") || null;
 let abertos = LS.get("bupe:diasAbertos")  || {};
 
-const estaAberto = id => !!abertos[id];
-function alternarDia(id, el){
-  if(abertos[id]) delete abertos[id]; else abertos[id] = true;
+/* O dia de hoje nasce aberto. Uma escolha manual sempre vence — por isso o
+   fechado é gravado como false, e não apagado da lista. */
+const estaAberto = d => (d.id in abertos) ? !!abertos[d.id] : ehHoje(d);
+function alternarDia(d, el){
+  abertos[d.id] = !estaAberto(d);
   LS.set("bupe:diasAbertos", abertos);
   render(el);
 }
@@ -187,16 +208,28 @@ function barraTopo(el, total){
   }
 
   const visiveis = ordenados().filter(d => !filtro || diaTemCidade(d, filtro));
-  const algumAberto = visiveis.some(d => estaAberto(d.id));
+  const algumAberto = visiveis.some(estaAberto);
   const tudo = document.createElement("button");
   tudo.className = "chip acao-chip";
   tudo.textContent = algumAberto ? "Recolher tudo" : "Abrir tudo";
   tudo.onclick = () => {
-    visiveis.forEach(d => { if(algumAberto) delete abertos[d.id]; else abertos[d.id] = true; });
+    visiveis.forEach(d => { abertos[d.id] = !algumAberto; });
     LS.set("bupe:diasAbertos", abertos);
     render(el);
   };
   nav.appendChild(tudo);
+
+  /* volta para hoje depois de rolar o roteiro inteiro */
+  if(temHoje()){
+    const hoje = document.createElement("button");
+    hoje.className = "chip acao-chip hoje-chip";
+    hoje.textContent = "Hoje";
+    hoje.onclick = () => {
+      if(filtro){ filtro = null; LS.set("bupe:filtroCidade", null); render(el); }
+      irParaHoje(true);
+    };
+    nav.appendChild(hoje);
+  }
   el.appendChild(nav);
 }
 
@@ -219,6 +252,39 @@ function htmlParadas(d, paradas, varias){
   return html;
 }
 
+/* ═══════ ancorar em hoje ═══════ */
+/* A barra fixa cobre o topo da tela; rolar até a borda do cartão o esconderia
+   embaixo dela. 150px é a barra recolhida com folga. */
+const ALTURA_BARRA = 150;
+
+export function irParaHoje(sempre){
+  const card = document.getElementById("dia-hoje");
+  if(!card) return false;
+  const r = card.getBoundingClientRect();
+  /* já dá para ver? então não mexe na tela do usuário */
+  const visivel = r.top >= ALTURA_BARRA && r.top < window.innerHeight * 0.6;
+  if(visivel && !sempre) return true;
+
+  const alvo = Math.max(0, r.top + window.scrollY - ALTURA_BARRA);
+  const partiuDe = window.scrollY;
+  window.scrollTo({ top: alvo, behavior: "smooth" });
+  /* Rolagem suave é animada pelo compositor e não anda com a página oculta —
+     um PWA restaurado do segundo plano abriria no topo. Se em 350ms não saiu
+     do lugar, vai de uma vez. */
+  setTimeout(() => {
+    if(Math.abs(window.scrollY - partiuDe) < 4 && Math.abs(alvo - partiuDe) >= 4){
+      window.scrollTo({ top: alvo, behavior: "instant" });
+    }
+  }, 350);
+  return true;
+}
+
+/* chamado pelo app quando esta aba entra em cena.
+   setTimeout e não requestAnimationFrame: rAF não dispara com a aba oculta. */
+export function aoEntrar(){
+  setTimeout(() => irParaHoje(false), 0);
+}
+
 /* ═══════ render ═══════ */
 export function render(el){
   const todos = ordenados();
@@ -239,6 +305,7 @@ export function render(el){
     </div>`);
   }
 
+  const prox = proximoDia();
   dias.forEach(d => {
     const todasParadas = paradasDe(d);
     const cidades = cidadesDoDia(d);
@@ -249,9 +316,13 @@ export function render(el){
       ? todasParadas.filter(p => cidadeDa(p, d) === filtro)
       : todasParadas;
 
-    const aberto = estaAberto(d.id);
+    const aberto = estaAberto(d);
+    const hoje = ehHoje(d);
+    const aSeguir = prox && prox.id === d.id;
     const card = document.createElement("section");
-    card.className = "card dia" + (aberto ? " aberto" : "");
+    card.className = "card dia" + (aberto ? " aberto" : "")
+      + (hoje ? " hoje" : "") + (ehPassado(d) ? " passado" : "");
+    if(hoje) card.id = "dia-hoje";
 
     const resumo = paradas.length
       ? `${paradas.length} parada${paradas.length>1?"s":""}${paradas[0].h ? " · a partir das "+esc(paradas[0].h) : ""}`
@@ -259,7 +330,10 @@ export function render(el){
 
     card.innerHTML = `
       <div class="dia-head">
-        <div class="dia-data"><b>${esc(dataBR(d.dia))}</b><span>${esc(diaSemana(d.dia))}</span></div>
+        <div class="dia-data">
+          ${hoje ? `<em class="marca">hoje</em>` : aSeguir ? `<em class="marca prox">a seguir</em>` : ""}
+          <b>${esc(dataBR(d.dia))}</b><span>${esc(diaSemana(d.dia))}</span>
+        </div>
         <div class="dia-tit">
           <h2>${esc(d.titulo || cidades.join(" · ") || "Sem título")}</h2>
           <span class="when">${resumo}</span>
@@ -281,7 +355,7 @@ export function render(el){
 
     card.querySelector(".dia-head").onclick = e => {
       if(e.target.closest(".mini")) return;
-      alternarDia(d.id, el);
+      alternarDia(d, el);
     };
     card.querySelector(".dia-head .mini").onclick = e => { e.stopPropagation(); editarDia(d); };
     card.querySelector(".add-inline").onclick = () => novaParada(d.id);

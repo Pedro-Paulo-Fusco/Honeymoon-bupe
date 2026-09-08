@@ -1,7 +1,7 @@
-/* Service worker — versão 10.
+/* Service worker — versão 11.
    Ao editar qualquer arquivo do app, suba este número. */
-const CACHE  = "bupe2026-v10";
-const EXTERN = "bupe2026-ext-v10";
+const CACHE  = "bupe2026-v11";
+const EXTERN = "bupe2026-ext-v11";
 
 const SHELL = [
   "./","./index.html","./styles.css","./app.js","./store.js","./util.js","./data.js",

@@ -441,6 +441,20 @@ footer{padding:22px 14px 30px;text-align:center}
 html[data-tema="escuro"] #tema .lua{display:block}
 html[data-tema="escuro"] #tema .sol{display:none}
 
+/* ══ onde a viagem esta hoje ══
+   Passado apaga, hoje acende, futuro fica neutro. De relance a aba responde
+   "em que ponto disto tudo eu estou". */
+.dia .dia-data .marca{display:block;font-family:"IBM Plex Mono",monospace;
+  font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;font-style:normal;
+  color:var(--av-txt);margin-bottom:3px}
+.dia .dia-data .marca.prox{color:var(--grigio)}
+.dia.hoje{border-color:var(--fogo);box-shadow:0 0 0 1px var(--fogo)}
+.dia.hoje .dia-data{background:var(--av-bg);border-color:var(--av-linea)}
+.dia.hoje .dia-data b{color:var(--av-txt)}
+.dia.passado{background:var(--done-bg);border-color:var(--done-linea)}
+.dia.passado .dia-tit h2,.dia.passado .dia-data b{color:var(--grigio)}
+.hoje-chip{border-color:var(--fogo);color:var(--av-txt)}
+
 /* ══ dia recolhível ══ */
 .dia .dia-head{cursor:pointer;align-items:center}
 .dia .dia-body{display:none}

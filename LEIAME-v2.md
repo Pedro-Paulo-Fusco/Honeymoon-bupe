@@ -32,7 +32,7 @@ ramo `lugares`. **Sem republicar, os pagamentos e a aba Lugares são recusados c
 
 ### 3. Forçar a atualização nos celulares
 
-O `sw.js` está em `bupe2026-v10`, então o service worker troca sozinho. Se algum celular
+O `sw.js` está em `bupe2026-v11`, então o service worker troca sozinho. Se algum celular
 insistir na versão antiga, feche o app completamente e reabra, ou recarregue com Ctrl+Shift+R
 no navegador.
 
@@ -54,6 +54,13 @@ Organizado por dia: data, cidade, título e observações; dentro, paradas com h
 detalhe. As paradas se reordenam pelo horário e os dias se agrupam por cidade, em ordem
 cronológica. Importador de CSV, TSV ou texto colado, com pré-visualização e escolha entre
 somar ou substituir.
+
+**Durante a viagem, a aba abre no dia de hoje.** O dia atual vem marcado, já aberto, e a tela
+rola até ele. O que já passou fica esmaecido; o que vem pela frente, normal — de relance dá
+para ver em que ponto da viagem vocês estão. O chip **Hoje** volta para lá depois de rolar.
+
+Antes da viagem nada disso atrapalha: o primeiro dia recebe a marca "a seguir" e a tela não
+rola nem abre nada sozinha. Se hoje não tiver dia cadastrado, a marca vai para o próximo.
 
 ### Estadias
 Nome, cidade, endereço, check-in e check-out (com contagem de noites), código da reserva,
@@ -171,5 +178,5 @@ As datas mandam em `data.js`: noites, dias em solo e dias corridos são **contad
 `EMBARQUE` e `RETORNO`**, e não devem ser escritos à mão. São três medidas distintas da mesma
 viagem — 12 noites, 12 dias em solo, 13 dias corridos — e cada uma tem seu uso.
 
-**Sempre que editar qualquer arquivo, suba a versão em `sw.js`** (`bupe2026-v10` → `v11`).
+**Sempre que editar qualquer arquivo, suba a versão em `sw.js`** (`bupe2026-v11` → `v12`).
 Sem isso, os celulares que já abriram o app continuam servindo a versão antiga do cache.

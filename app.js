@@ -170,6 +170,8 @@ function trocarAba(id){
     b.setAttribute("aria-selected", b.dataset.aba === id ? "true" : "false"));
   desenhar();
   window.scrollTo({ top:0, behavior:"instant" });
+  /* a aba pode querer ancorar em outro ponto — o roteiro vai para o dia de hoje */
+  ABAS[id].view.aoEntrar?.();
 }
 
 function desenhar(){
